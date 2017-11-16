@@ -13,11 +13,18 @@ library(tidytext)
 library(topicmodels)
 library(SnowballC)
 library(randomForest)
+
+library(stringi)
+library(gridExtra)
 ```
 
 ```{r cars}
-data<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE)
-df <- plyr::ldply(data, data.frame)
+musical_data<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+automotive_data<-lapply(readLines("reviews_Automotive_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+df<-rbind(musical_data,automotive_data)
 ```
 
 ```{r}
@@ -35,7 +42,7 @@ deduped %>%
   anti_join(stop_words) %>%
   mutate(word = wordStem(word)) %>%
   count(word, sort = T) %>%
-  filter(n>1200) %>%
+  filter(n>3000) %>%
   mutate(word = reorder(word, n)) %>%
   ggplot(aes(word, n)) + 
   geom_col() +
@@ -72,8 +79,9 @@ final %>%
 mat_final <- final %>%
   cast_dtm(id, word, n)
 
-ap_lda <- LDA(mat_final, k = 3, control = list(seed = 1234))
+ap_lda <- LDA(mat_final, k = 2, control = list(seed = 1234))
 ap_lda
+str(ap_lda)
 ap_topics <- tidy(ap_lda, matrix = "beta")
 
 ap_top_terms <- ap_topics %>%
@@ -111,5 +119,67 @@ beta_spread
 ```
 
 
+```{r}
+df2<- df %>% 
+  mutate(reviewLength=stri_length(reviewText)) %>% 
+  rename(Rating=overall)
+```
 
+
+
+Distrubution and Visualization of the Variables
+
+```{r}
+#Distribution of Rating itself
+table(df2$Rating)
+ggplot(df2,aes(x=Rating))+geom_bar(stat="count")+geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1)+ggtitle("Ratings Distribution")
+```
+
+
+```{r}
+#Review Length and Rating
+ggplot(df2,aes(x=reviewLength))+geom_density()
+
+df2<-df2 %>% 
+  filter(reviewLength<6000) %>% 
+  mutate(reviewLengthFactor=ifelse(reviewLength<100,"Short",ifelse(reviewLength<1000,"Medium","Long")))
+
+All<-ggplot(df2,aes(x=reviewLength,y=Rating))+geom_point()+geom_jitter()+stat_smooth(method="gam")+ggtitle("ReviewLength vs Rating (out of 5) for all reviews")
+
+Short<-ggplot(filter(df2,reviewLengthFactor=="Short"),aes(x=reviewLength,y=Rating))+geom_point()+geom_jitter()+stat_smooth(method="lm")+ggtitle("ReviewLength vs Rating (out of 5) for short reviews")
+
+Medium<-ggplot(filter(df2,reviewLengthFactor=="Medium"),aes(x=reviewLength,y=Rating))+geom_point()+geom_jitter()+stat_smooth(method="lm")+ggtitle("ReviewLength vs Rating (out of 5) for medium length reviews")
+
+Long<-ggplot(filter(df2,reviewLengthFactor=="Long"),aes(x=reviewLength,y=Rating))+geom_point()+geom_jitter()+stat_smooth(method="lm")+ggtitle("ReviewLength vs Rating (out of 5) for long reviews")
+
+grid.arrange(All, Short, Medium, Long, ncol=2)
+
+cor(df2$Rating,df2$reviewLength)
+```
+
+```{r}
+#Review Helpfulness and Rating
+ggplot(df2,aes(x=helpful))+geom_bar()+scale_x_continuous(limits = c(-1, 25)) #maxed out at 25 to give a sense of scale
+
+ggplot(df2,aes(x=helpful,y=Rating))+geom_point()+stat_smooth()+geom_jitter()+scale_x_continuous(limits=c(-1,25))
+```
+
+```{r}
+counts<-df2 %>%
+  group_by(asin) %>% 
+  summarise(reviewCount=n(),productAVG=mean(Rating)) %>% 
+  filter(reviewCount<75)
+
+ggplot(counts,aes(x=reviewCount,y=productAVG))+geom_point()+stat_smooth()
+cor(counts$reviewCount,counts$productAVG)
+```
+
+```{r}
+individuals<-df2 %>%
+  group_by(reviewerID) %>% 
+  summarise(numReviews=n(),AvgRating=mean(Rating))
+
+ggplot(individuals,aes(x=numReviews,y=AvgRating))+geom_point()+stat_smooth()
+cor(counts$reviewCount,counts$productAVG)
+```
 
