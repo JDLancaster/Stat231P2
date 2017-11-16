@@ -8,25 +8,108 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(jsonlite)
+library(tidyverse)
+library(tidytext)
+library(topicmodels)
+library(SnowballC)
+library(randomForest)
 ```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r cars}
 data<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE)
 df <- plyr::ldply(data, data.frame)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+deduped <- df[!duplicated(df$reviewText), ]
+deduped$reviewTime <- as.POSIXct(deduped$reviewTime, format = "%m %d, %Y", tz = "EST")
+deduped$reviewText<- as.character(deduped$reviewText)
+deduped$id <- 1:nrow(deduped)
+#deduped$reviewTime <- as.POSIXct(deduped$reviewTime)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+data(stop_words)
+deduped %>%
+  unnest_tokens(word, reviewText) %>%
+  anti_join(stop_words) %>%
+  mutate(word = wordStem(word)) %>%
+  count(word, sort = T) %>%
+  filter(n>1200) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) + 
+  geom_col() +
+  xlab(NULL) +
+  coord_flip()
+```
+
+```{r}
+
+temp <- deduped %>%
+  unnest_tokens(word, reviewText) %>%
+  anti_join(stop_words) %>%
+  mutate(word = wordStem(word)) %>%
+  count(word, sort = T)
+
+final <- deduped %>%
+  unnest_tokens(word, reviewText) %>%
+  anti_join(stop_words) %>%
+  mutate(word = wordStem(word)) %>%
+  left_join(temp, on = "word") %>%
+  bind_tf_idf(word, id, n)
+
+final %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word))))%>% 
+  top_n(20) %>%
+  ggplot(aes(word, tf_idf)) +
+  geom_col() +
+  labs(x = NULL, y = "tf-idf") +
+  coord_flip()
+```
+
+```{r}
+mat_final <- final %>%
+  cast_dtm(id, word, n)
+
+ap_lda <- LDA(mat_final, k = 3, control = list(seed = 1234))
+ap_lda
+ap_topics <- tidy(ap_lda, matrix = "beta")
+
+ap_top_terms <- ap_topics %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+ap_top_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip()
+
+beta_spread <- ap_topics %>%
+  mutate(topic = paste0("topic", topic)) %>%
+  spread(topic, beta) %>%
+  filter(topic1 > .001 | topic2 > .001) %>%
+  mutate(log_ratio = log2(topic2 / topic1))
+
+beta_spread
+```
+
+```{r}
+##plot_austen %>% 
+# group_by(book) %>% 
+#  top_n(15) %>% 
+#  ungroup %>%
+#  ggplot(aes(word, tf_idf, fill = book)) +
+#  geom_col(show.legend = FALSE) +
+#  labs(x = NULL, y = "tf-idf") +
+#  facet_wrap(~book, ncol = 2, scales = "free") +
+#  coord_flip()
+```
+
+
+
+
