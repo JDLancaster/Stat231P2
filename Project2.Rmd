@@ -183,3 +183,12 @@ ggplot(individuals,aes(x=numReviews,y=AvgRating))+geom_point()+stat_smooth()
 cor(counts$reviewCount,counts$productAVG)
 ```
 
+Deliverables
+•	Correlation of words with Score
+•	Distribution & Visualization of basic variables
+o	Score
+•	Text Analysis
+o	nGram analysis?
+o	Corelation with words and score
+•	Model – not including Text – with text
+•	Get actual product data
