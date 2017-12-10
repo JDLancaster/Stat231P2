@@ -17,6 +17,7 @@ library(stringi)
 library(gridExtra)
 library(tidytext)
 library(ggthemes)
+library(tm)
 ```
 
 ```{r cars}
