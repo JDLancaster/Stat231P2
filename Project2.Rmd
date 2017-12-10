@@ -16,15 +16,78 @@ library(randomForest)
 library(stringi)
 library(gridExtra)
 library(tidytext)
+library(ggthemes)
 ```
 
 ```{r cars}
-musical_data<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
-automotive_data<-lapply(readLines("reviews_Automotive_5.json"), fromJSON, flatten = TRUE) %>% 
+musical<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE) %>% 
   plyr::ldply(data.frame)
 
-df<-rbind(musical_data,automotive_data)
+automotive<-lapply(readLines("reviews_Automotive_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+amazon_instant<-lapply(readLines("reviews_Amazon_Instant_Video_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+apps_for_android<-lapply(readLines("reviews_Apps_for_Android_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+baby<-lapply(readLines("reviews_Baby_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+beauty<-lapply(readLines("reviews_Beauty_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+cell_phones_and_accessories<-lapply(readLines("reviews_Cell_Phones_and_Accessories_5.json"), 
+                                    fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+digital_music<-lapply(readLines("reviews_Digital_Music_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+electronics<-lapply(readLines("reviews_Electronics_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+grocery<-lapply(readLines("reviews_Grocery_and_Gourmet_Food_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+health_and_personal<-lapply(readLines("reviews_Health_and_Personal_Care_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+home_kitchen<-lapply(readLines("reviews_Home_and_Kitchen_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+kindle_store<-lapply(readLines("reviews_Kindle_Store_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+movies_and_tv<-lapply(readLines("reviews_Movies_and_TV_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+musical_instruments<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+office_products<-lapply(readLines("reviews_Office_Products_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+patio_lawn<-lapply(readLines("reviews_Patio_Lawn_and_Garden_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+pet<-lapply(readLines("reviews_Pet_Supplies_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+sports_outdoors<-lapply(readLines("reviews_Sports_and_Outdoors_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+tools<-lapply(readLines("reviews_Tools_and_Home_Improvement_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+toys_games<-lapply(readLines("reviews_Toys_and_Games_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+video_games<-lapply(readLines("reviews_Video_Games_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+df<-rbind(musical_data,automotive_data,amazon_instant,apps_for_android,baby,beauty,cell_phones_and_accessories,digital_music,electronics,grocery,health_and_personal,home_kitchen,kindle_store,movies_and_tv,musical_instruments,office_products,patio_lawn,pet,sports_outdoors,tools,toys_games,video_games)
 ```
 
 ```{r}
@@ -192,3 +255,16 @@ o	nGram analysis?
 o	Corelation with words and score
 •	Model – not including Text – with text
 •	Get actual product data
+
+
+
+```{r}
+grouped_data<-df2 %>%  #data grouped by product and given num_reviews and num_score
+  group_by(asin) %>% 
+  summarise(meanScore=mean(Rating),nReviews=n()) %>% 
+  mutate(meanScore=round(meanScore,1))
+
+ggplot(grouped_data,aes(x=meanScore))+geom_bar(stat="count")+theme_economist()
+
+```
+
