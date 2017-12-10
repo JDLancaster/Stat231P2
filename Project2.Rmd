@@ -21,73 +21,95 @@ library(ggthemes)
 
 ```{r cars}
 musical<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame) %>% 
+  mutate(source="musical_instruments")
 
 automotive<-lapply(readLines("reviews_Automotive_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="automotive")
 
 amazon_instant<-lapply(readLines("reviews_Amazon_Instant_Video_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="amazon_instant_video")
 
 apps_for_android<-lapply(readLines("reviews_Apps_for_Android_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="apps_for_android")
 
 baby<-lapply(readLines("reviews_Baby_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="baby")
 
 beauty<-lapply(readLines("reviews_Beauty_5.json"), fromJSON, flatten = TRUE) %>% 
   plyr::ldply(data.frame)
 
 cell_phones_and_accessories<-lapply(readLines("reviews_Cell_Phones_and_Accessories_5.json"), 
                                     fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="cell_phones")
 
 digital_music<-lapply(readLines("reviews_Digital_Music_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="digital_music")
 
 electronics<-lapply(readLines("reviews_Electronics_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="electronics")
 
 grocery<-lapply(readLines("reviews_Grocery_and_Gourmet_Food_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="grocery")
 
 health_and_personal<-lapply(readLines("reviews_Health_and_Personal_Care_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="health_and_personal_care")
 
 home_kitchen<-lapply(readLines("reviews_Home_and_Kitchen_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="home_and_kitchen")
 
 kindle_store<-lapply(readLines("reviews_Kindle_Store_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="kindle_store")
 
 movies_and_tv<-lapply(readLines("reviews_Movies_and_TV_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="movies_and_tv")
 
 musical_instruments<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE) %>% 
   plyr::ldply(data.frame)
 
 office_products<-lapply(readLines("reviews_Office_Products_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="office_products")
 
 patio_lawn<-lapply(readLines("reviews_Patio_Lawn_and_Garden_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="patio_lawn_garden")
 
 pet<-lapply(readLines("reviews_Pet_Supplies_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="pet_supplies")
 
 sports_outdoors<-lapply(readLines("reviews_Sports_and_Outdoors_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="sports_outdoors")
 
 tools<-lapply(readLines("reviews_Tools_and_Home_Improvement_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="tools_home_improvement")
 
 toys_games<-lapply(readLines("reviews_Toys_and_Games_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="toys_games")
 
 video_games<-lapply(readLines("reviews_Video_Games_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
+  plyr::ldply(data.frame)%>% 
+  mutate(source="video_games")
 
-df<-rbind(musical_data,automotive_data,amazon_instant,apps_for_android,baby,beauty,cell_phones_and_accessories,digital_music,electronics,grocery,health_and_personal,home_kitchen,kindle_store,movies_and_tv,musical_instruments,office_products,patio_lawn,pet,sports_outdoors,tools,toys_games,video_games)
+#df<-rbind(musical_data,automotive_data,amazon_instant,apps_for_android,baby,beauty,cell_phones_and_accessories,digital_music,electronics,grocery,health_and_personal,home_kitchen,kindle_store,movies_and_tv,musical_instruments,office_products,patio_lawn,pet,sports_outdoors,tools,toys_games,video_games)
+
+df<-rbind(amazon_instant,automotive,musical,patio_lawn)
 ```
 
 ```{r}
@@ -136,6 +158,8 @@ final %>%
   geom_col() +
   labs(x = NULL, y = "tf-idf") +
   coord_flip()
+
+
 ```
 
 ```{r}
