@@ -13,9 +13,9 @@ library(tidytext)
 library(topicmodels)
 library(SnowballC)
 library(randomForest)
-
 library(stringi)
 library(gridExtra)
+library(tidytext)
 ```
 
 ```{r cars}
@@ -36,7 +36,7 @@ deduped$id <- 1:nrow(deduped)
 ```
 
 ```{r}
-data(stop_words)
+#data(stop_words)
 deduped %>%
   unnest_tokens(word, reviewText) %>%
   anti_join(stop_words) %>%
