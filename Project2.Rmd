@@ -20,98 +20,84 @@ library(ggthemes)
 library(tm)
 ```
 
-```{r cars}
-musical<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame) %>% 
-  mutate(source="musical_instruments")
+```{r}
 
-automotive<-lapply(readLines("reviews_Automotive_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="automotive")
 
-amazon_instant<-lapply(readLines("reviews_Amazon_Instant_Video_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="amazon_instant_video")
 
-apps_for_android<-lapply(readLines("reviews_Apps_for_Android_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="apps_for_android")
-
-baby<-lapply(readLines("reviews_Baby_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="baby")
-
-beauty<-lapply(readLines("reviews_Beauty_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
-
-cell_phones_and_accessories<-lapply(readLines("reviews_Cell_Phones_and_Accessories_5.json"), 
-                                    fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="cell_phones")
-
-digital_music<-lapply(readLines("reviews_Digital_Music_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="digital_music")
-
-electronics<-lapply(readLines("reviews_Electronics_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="electronics")
-
-grocery<-lapply(readLines("reviews_Grocery_and_Gourmet_Food_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="grocery")
-
-health_and_personal<-lapply(readLines("reviews_Health_and_Personal_Care_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="health_and_personal_care")
-
-home_kitchen<-lapply(readLines("reviews_Home_and_Kitchen_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="home_and_kitchen")
-
-kindle_store<-lapply(readLines("reviews_Kindle_Store_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="kindle_store")
-
-movies_and_tv<-lapply(readLines("reviews_Movies_and_TV_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="movies_and_tv")
-
-musical_instruments<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)
-
-office_products<-lapply(readLines("reviews_Office_Products_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="office_products")
-
-patio_lawn<-lapply(readLines("reviews_Patio_Lawn_and_Garden_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="patio_lawn_garden")
-
-pet<-lapply(readLines("reviews_Pet_Supplies_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="pet_supplies")
-
-sports_outdoors<-lapply(readLines("reviews_Sports_and_Outdoors_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="sports_outdoors")
-
-tools<-lapply(readLines("reviews_Tools_and_Home_Improvement_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="tools_home_improvement")
-
-toys_games<-lapply(readLines("reviews_Toys_and_Games_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="toys_games")
-
-video_games<-lapply(readLines("reviews_Video_Games_5.json"), fromJSON, flatten = TRUE) %>% 
-  plyr::ldply(data.frame)%>% 
-  mutate(source="video_games")
-
-#df<-rbind(musical_data,automotive_data,amazon_instant,apps_for_android,baby,beauty,cell_phones_and_accessories,digital_music,electronics,grocery,health_and_personal,home_kitchen,kindle_store,movies_and_tv,musical_instruments,office_products,patio_lawn,pet,sports_outdoors,tools,toys_games,video_games)
-
-df<-rbind(amazon_instant,automotive,musical,patio_lawn)
 ```
+
+
+```{r cars}
+musical <- jsonlite::stream_in(file("Project Data/reviews_Musical_Instruments_5.json"))
+
+automotive <- jsonlite::stream_in(file("Project Data/reviews_Automotive_5.json"))
+
+amazon_instant <- jsonlite::stream_in(file("Project Data/reviews_Amazon_Instant_Video_5.json"))
+
+apps_for_android <- jsonlite::stream_in(file("Project Data/reviews_Apps_for_Android_5.json"))
+
+baby <- jsonlite::stream_in(file("Project Data/reviews_Baby_5.json"))
+
+beauty <- jsonlite::stream_in(file("Project Data/reviews_Beauty_5.json"))
+
+#books <- jsonlite::stream_in(file("Project Data/reviews_Books_5.json"))
+
+cds_vinyl <- jsonlite::stream_in(file("Project Data/reviews_CDs_and_Vinyl_5.json"))
+
+cell_phones_and_accessories<- jsonlite::stream_in(file("Project Data/reviews_Cell_Phones_and_Accessories_5.json"))
+
+clothing_shoes <- jsonlite::stream_in(file("Project Data/reviews_Clothing_Shoes_and_Jewelry_5.json"))
+
+digital_music <- jsonlite::stream_in(file("Project Data/reviews_Digital_Music_5.json"))
+
+electronics <- jsonlite::stream_in(file("Project Data/reviews_Electronics_5.json"))
+
+grocery <- jsonlite::stream_in(file("Project Data/reviews_Grocery_and_Gourmet_Food_5.json"))
+
+health_and_personal <- jsonlite::stream_in(file("Project Data/reviews_Health_and_Personal_Care_5.json"))
+
+home_kitchen <- jsonlite::stream_in(file("Project Data/reviews_Home_and_Kitchen_5.json"))
+
+kindle_store <- jsonlite::stream_in(file("Project Data/reviews_Kindle_Store_5.json"))
+
+movies_and_tv <- jsonlite::stream_in(file("Project Data/reviews_Movies_and_TV_5.json"))
+
+musical_instruments <- jsonlite::stream_in(file("Project Data/reviews_Musical_Instruments_5.json"))
+
+office_products <- jsonlite::stream_in(file("Project Data/reviews_Office_Products_5.json"))
+
+patio_lawn <- jsonlite::stream_in(file("Project Data/reviews_Patio_Lawn_and_Garden_5.json"))
+
+pet <- jsonlite::stream_in(file("Project Data/reviews_Pet_Supplies_5.json"))
+
+sports_outdoors <- jsonlite::stream_in(file("Project Data/reviews_Sports_and_Outdoors_5.json"))
+
+tools <- jsonlite::stream_in(file("Project Data/reviews_Tools_and_Home_Improvement_5.json"))
+
+toys_games <- jsonlite::stream_in(file("Project Data/reviews_Toys_and_Games_5.json"))
+
+video_games<- jsonlite::stream_in(file("Project Data/reviews_Video_Games_5.json"))
+
+#df<-rbind(amazon_instant,apps_for_android, automotive, baby, cds_vinyl, cell_phones_and_accessories, clothing_shoes, digital_music, electronics, grocery, health_and_personal, home_kitchen, kindle_store, movies_and_tv, musical, office_products, patio_lawn, pet, sports_outdoors, tools, toys_games, video_games)
+
+df<-rbind(amazon_instant,apps_for_android,automotive,musical)
+```
+
+```{r}
+#musical$helpful<-
+#musical$out_of<-
+  
+musical$helpful<-toString(musical$helpful)
+str(musical$helpful)
+musical$helpful[2]
+ay<-musical$helpful[2]
+ay
+table(musical$helpful)
+str(musical$helpfulp)
+readr::parse_number(sub(" .*", "", ay))
+as.numeric(gsub("([0-9]+).*$", "\\1", sub(" .*", "", ay)))
+```
+
 
 ```{r}
 deduped <- df[!duplicated(df$reviewText), ]
@@ -120,6 +106,11 @@ deduped$reviewText<- as.character(deduped$reviewText)
 deduped$id <- 1:nrow(deduped)
 #deduped$reviewTime <- as.POSIXct(deduped$reviewTime)
 ```
+
+```{r}
+df<-select(df,reviewerID,asin, reviewText, overall, summary, reviewTime)
+```
+
 
 ```{r}
 #data(stop_words)
@@ -218,9 +209,27 @@ df2<- df %>%
 Distrubution and Visualization of the Variables
 
 ```{r}
+#Basic Variables to Break Down:
+#Helpful, Rating, reviewLengthFactor
+
+#Helpful
+ggplot(df2,aes(x=helpful))+scale_x_continuous(limits = c(-1, 10),breaks=c(0,2,4,6,8,10))+geom_bar()
+
+#Rating
+ggplot(df2,aes(x=Rating))+geom_bar(stat="count",aes(fill=as.factor(Rating)))+geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1)+ggtitle("Ratings Distribution")+scale_fill_hue(c=500, l=100)+theme(legend.position="none")
+#ReviewLengthFactor
+ggplot(df2,aes(x=reviewLength))+geom_bar(stat="count")
+
+#Extra Stuff
+#Prolific User vs avgRating
+#Prolific User vs Helpful
+```
+
+
+```{r}
 #Distribution of Rating itself
 table(df2$Rating)
-ggplot(df2,aes(x=Rating))+geom_bar(stat="count")+geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1)+ggtitle("Ratings Distribution")
+
 ```
 
 
@@ -228,9 +237,12 @@ ggplot(df2,aes(x=Rating))+geom_bar(stat="count")+geom_text(stat='bin',aes(label=
 #Review Length and Rating
 ggplot(df2,aes(x=reviewLength))+geom_density()
 
+df2<-sample_n(df2, 10000)
+
+
 df2<-df2 %>% 
   filter(reviewLength<6000) %>% 
-  mutate(reviewLengthFactor=ifelse(reviewLength<100,"Short",ifelse(reviewLength<1000,"Medium","Long")))
+  mutate(reviewLengthFactor=ifelse(reviewLength<200,"Short",ifelse(reviewLength<600,"Medium","Long")))
 
 All<-ggplot(df2,aes(x=reviewLength,y=Rating))+geom_point()+geom_jitter()+stat_smooth(method="gam")+ggtitle("ReviewLength vs Rating (out of 5) for all reviews")
 
@@ -241,7 +253,6 @@ Medium<-ggplot(filter(df2,reviewLengthFactor=="Medium"),aes(x=reviewLength,y=Rat
 Long<-ggplot(filter(df2,reviewLengthFactor=="Long"),aes(x=reviewLength,y=Rating))+geom_point()+geom_jitter()+stat_smooth(method="lm")+ggtitle("ReviewLength vs Rating (out of 5) for long reviews")
 
 grid.arrange(All, Short, Medium, Long, ncol=2)
-
 cor(df2$Rating,df2$reviewLength)
 ```
 
@@ -249,7 +260,8 @@ cor(df2$Rating,df2$reviewLength)
 #Review Helpfulness and Rating
 ggplot(df2,aes(x=helpful))+geom_bar()+scale_x_continuous(limits = c(-1, 25)) #maxed out at 25 to give a sense of scale
 
-ggplot(df2,aes(x=helpful,y=Rating))+geom_point()+stat_smooth()+geom_jitter()+scale_x_continuous(limits=c(-1,25))
+ggplot(df2,aes(x=helpful,y=Rating,color=Rating))+geom_point()+stat_smooth()+geom_jitter()+scale_x_continuous(limits=c(-1,25))+theme(legend.position="none")
+cor(df2$helpful,df2$Rating)
 ```
 
 ```{r}
