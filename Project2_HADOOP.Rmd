@@ -1,0 +1,370 @@
+---
+title: "Project2"
+author: "JL"
+date: "11/15/2017"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(jsonlite)
+library(tidyverse)
+library(tidytext)
+library(topicmodels)
+library(SnowballC)
+library(randomForest)
+library(stringi)
+library(gridExtra)
+library(tidytext)
+library(ggthemes)
+library(tm)
+library(sparklyr)
+```
+
+```{r}
+#takes ~20 mins
+
+#downloadData() 
+```
+
+```{r}
+Sys.setenv(SPARK_HOME="/usr/lib/spark")
+config <- spark_config()
+
+sc <- spark_connect(master = "yarn-client", config = config, version = '1.6.2')
+tbl_cache(sc, 'default.amazon4')
+```
+
+```{r}
+categories <- c("Automotive", "Amazon_Instant_Video","Apps_For_Android","Baby","Beauty","Books","CDs_and_Vinyl","Cell_Phones_and_Accessories","Clothing_Shoes_and_Jewelry","Digital_Music","Electronics","Health_and_Personal_Care","Home_and_Kitchen","Kindle_Store","Movies_and_TV","Musical_Instruments","Office_Products","Patio_Lawn_and_Garden","Pet_Supplies","Sports_and_Outdoors","Tools_and_Home_Improvement","Toys_and_Games","Video_Games")
+
+out <- vector("list", length(categories))
+
+for(i in 1:length(categories)){
+out[[i]] <- spark_read_json(sc, paste(categories[i],"2",sep = ""), paste(categories[i],".json",sep=""), memory = F)
+#tbl_cache(sc, categories[i])
+print(i)
+print(categories[i])
+}
+
+Automotive <- out[1]
+Amazon_Instant_Video <- out[2]
+Apps_For_Android <- out[3]
+Baby <- out[4]
+Beauty <- out[5]
+Books <- out[6]
+CDs_and_Vinyl <- out[7]
+Cell_Phones_and_Accessories <- out[8]
+Clothing_Shoes_and_Jewelry <- out[9]
+Digital_Music <- out[10]
+Electronics <- out[11]
+Health_and_Personal_Care <- out[12]
+Home_and_Kitchen <- out[13]
+Kindle_Store <- out[14]
+Movies_and_TV <- out[15]
+Musical_Instruments <- out[16]
+Office_Products <- out[17]
+Patio_Lawn_and_Garden <- out[18]
+Pet_Supplies <- out[19]
+Sports_and_Outdoors <- out[20]
+Tools_and_Home_Improvement <- out[21]
+Toys_and_Games <- out[22]
+Video_Games <- out[23]
+
+sdf_bind_rows(out)
+
+#no apps for android -- corrupted
+
+amazon_reviews <- sdf_bind_rows(Automotive, Amazon_Instant_Video,Baby,Beauty,Books,CDs_and_Vinyl,Cell_Phones_and_Accessories,Clothing_Shoes_and_Jewelry,Digital_Music,Electronics,Health_and_Personal_Care,Home_and_Kitchen,Kindle_Store,Movies_and_TV,Musical_Instruments,Office_Products,Patio_Lawn_and_Garden,Pet_Supplies,Sports_and_Outdoors,Tools_and_Home_Improvement,Toys_and_Games,Video_Games)
+
+#amazon_reviews is a spark table -- we can run dplyr and stuff on it
+#and it will return queries
+#if you want to make a graph, add collect() and make sure the result you're plotting on is fairly small
+#it takes a long time and won't work if it's too big
+
+things <- amazon_reviews %>%
+  filter(overall < 3, length(summary) > 100)%>%
+  select(overall) %>%
+  collect()
+
+ggplot(things, aes(x = as.factor(overall))) + geom_bar(stat = "count")
+```
+
+
+
+
+```{r cars}
+musical<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame) %>% 
+  mutate(source="musical_instruments")
+
+automotive<-lapply(readLines("reviews_Automotive_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="automotive")
+
+amazon_instant<-lapply(readLines("reviews_Amazon_Instant_Video_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="amazon_instant_video")
+
+apps_for_android<-lapply(readLines("reviews_Apps_for_Android_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="apps_for_android")
+
+baby<-lapply(readLines("reviews_Baby_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="baby")
+
+beauty<-lapply(readLines("reviews_Beauty_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+cell_phones_and_accessories<-lapply(readLines("reviews_Cell_Phones_and_Accessories_5.json"), 
+                                    fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="cell_phones")
+
+digital_music<-lapply(readLines("reviews_Digital_Music_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="digital_music")
+
+electronics<-lapply(readLines("reviews_Electronics_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="electronics")
+
+grocery<-lapply(readLines("reviews_Grocery_and_Gourmet_Food_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="grocery")
+
+health_and_personal<-lapply(readLines("reviews_Health_and_Personal_Care_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="health_and_personal_care")
+
+home_kitchen<-lapply(readLines("reviews_Home_and_Kitchen_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="home_and_kitchen")
+
+kindle_store<-lapply(readLines("reviews_Kindle_Store_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="kindle_store")
+
+movies_and_tv<-lapply(readLines("reviews_Movies_and_TV_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="movies_and_tv")
+
+musical_instruments<-lapply(readLines("reviews_Musical_Instruments_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)
+
+office_products<-lapply(readLines("reviews_Office_Products_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="office_products")
+
+patio_lawn<-lapply(readLines("reviews_Patio_Lawn_and_Garden_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="patio_lawn_garden")
+
+pet<-lapply(readLines("reviews_Pet_Supplies_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="pet_supplies")
+
+sports_outdoors<-lapply(readLines("reviews_Sports_and_Outdoors_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="sports_outdoors")
+
+tools<-lapply(readLines("reviews_Tools_and_Home_Improvement_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="tools_home_improvement")
+
+toys_games<-lapply(readLines("reviews_Toys_and_Games_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="toys_games")
+
+video_games<-lapply(readLines("reviews_Video_Games_5.json"), fromJSON, flatten = TRUE) %>% 
+  plyr::ldply(data.frame)%>% 
+  mutate(source="video_games")
+
+#df<-rbind(musical_data,automotive_data,amazon_instant,apps_for_android,baby,beauty,cell_phones_and_accessories,digital_music,electronics,grocery,health_and_personal,home_kitchen,kindle_store,movies_and_tv,musical_instruments,office_products,patio_lawn,pet,sports_outdoors,tools,toys_games,video_games)
+
+df<-rbind(amazon_instant,automotive,musical,patio_lawn)
+```
+
+```{r}
+deduped <- df[!duplicated(df$reviewText), ]
+deduped$reviewTime <- as.POSIXct(deduped$reviewTime, format = "%m %d, %Y", tz = "EST")
+deduped$reviewText<- as.character(deduped$reviewText)
+deduped$id <- 1:nrow(deduped)
+#deduped$reviewTime <- as.POSIXct(deduped$reviewTime)
+```
+
+```{r}
+#data(stop_words)
+deduped %>%
+  unnest_tokens(word, reviewText) %>%
+  anti_join(stop_words) %>%
+  mutate(word = wordStem(word)) %>%
+  count(word, sort = T) %>%
+  filter(n>3000) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) + 
+  geom_col() +
+  xlab(NULL) +
+  coord_flip()
+```
+
+```{r}
+
+temp <- deduped %>%
+  unnest_tokens(word, reviewText) %>%
+  anti_join(stop_words) %>%
+  mutate(word = wordStem(word)) %>%
+  count(word, sort = T)
+
+final <- deduped %>%
+  unnest_tokens(word, reviewText) %>%
+  anti_join(stop_words) %>%
+  mutate(word = wordStem(word)) %>%
+  left_join(temp, on = "word") %>%
+  bind_tf_idf(word, id, n)
+
+final %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word))))%>% 
+  top_n(20) %>%
+  ggplot(aes(word, tf_idf)) +
+  geom_col() +
+  labs(x = NULL, y = "tf-idf") +
+  coord_flip()
+
+
+```
+
+```{r}
+mat_final <- final %>%
+  cast_dtm(id, word, n)
+
+ap_lda <- LDA(mat_final, k = 2, control = list(seed = 1234))
+ap_lda
+str(ap_lda)
+ap_topics <- tidy(ap_lda, matrix = "beta")
+
+ap_top_terms <- ap_topics %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+ap_top_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip()
+
+beta_spread <- ap_topics %>%
+  mutate(topic = paste0("topic", topic)) %>%
+  spread(topic, beta) %>%
+  filter(topic1 > .001 | topic2 > .001) %>%
+  mutate(log_ratio = log2(topic2 / topic1))
+
+beta_spread
+```
+
+```{r}
+##plot_austen %>% 
+# group_by(book) %>% 
+#  top_n(15) %>% 
+#  ungroup %>%
+#  ggplot(aes(word, tf_idf, fill = book)) +
+#  geom_col(show.legend = FALSE) +
+#  labs(x = NULL, y = "tf-idf") +
+#  facet_wrap(~book, ncol = 2, scales = "free") +
+#  coord_flip()
+```
+
+
+```{r}
+df2<- df %>% 
+  mutate(reviewLength=stri_length(reviewText)) %>% 
+  rename(Rating=overall)
+```
+
+
+
+Distrubution and Visualization of the Variables
+
+```{r}
+#Distribution of Rating itself
+table(df2$Rating)
+ggplot(df2,aes(x=Rating))+geom_bar(stat="count")+geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1)+ggtitle("Ratings Distribution")
+```
+
+
+```{r}
+#Review Length and Rating
+ggplot(df2,aes(x=reviewLength))+geom_density()
+
+df2<-df2 %>% 
+  filter(reviewLength<6000) %>% 
+  mutate(reviewLengthFactor=ifelse(reviewLength<100,"Short",ifelse(reviewLength<1000,"Medium","Long")))
+
+All<-ggplot(df2,aes(x=reviewLength,y=Rating))+geom_point()+geom_jitter()+stat_smooth(method="gam")+ggtitle("ReviewLength vs Rating (out of 5) for all reviews")
+
+Short<-ggplot(filter(df2,reviewLengthFactor=="Short"),aes(x=reviewLength,y=Rating))+geom_point()+geom_jitter()+stat_smooth(method="lm")+ggtitle("ReviewLength vs Rating (out of 5) for short reviews")
+
+Medium<-ggplot(filter(df2,reviewLengthFactor=="Medium"),aes(x=reviewLength,y=Rating))+geom_point()+geom_jitter()+stat_smooth(method="lm")+ggtitle("ReviewLength vs Rating (out of 5) for medium length reviews")
+
+Long<-ggplot(filter(df2,reviewLengthFactor=="Long"),aes(x=reviewLength,y=Rating))+geom_point()+geom_jitter()+stat_smooth(method="lm")+ggtitle("ReviewLength vs Rating (out of 5) for long reviews")
+
+grid.arrange(All, Short, Medium, Long, ncol=2)
+
+cor(df2$Rating,df2$reviewLength)
+```
+
+```{r}
+#Review Helpfulness and Rating
+ggplot(df2,aes(x=helpful))+geom_bar()+scale_x_continuous(limits = c(-1, 25)) #maxed out at 25 to give a sense of scale
+
+ggplot(df2,aes(x=helpful,y=Rating))+geom_point()+stat_smooth()+geom_jitter()+scale_x_continuous(limits=c(-1,25))
+```
+
+```{r}
+counts<-df2 %>%
+  group_by(asin) %>% 
+  summarise(reviewCount=n(),productAVG=mean(Rating)) %>% 
+  filter(reviewCount<75)
+
+ggplot(counts,aes(x=reviewCount,y=productAVG))+geom_point()+stat_smooth()
+cor(counts$reviewCount,counts$productAVG)
+```
+
+```{r}
+individuals<-df2 %>%
+  group_by(reviewerID) %>% 
+  summarise(numReviews=n(),AvgRating=mean(Rating))
+
+ggplot(individuals,aes(x=numReviews,y=AvgRating))+geom_point()+stat_smooth()
+cor(counts$reviewCount,counts$productAVG)
+```
+
+Deliverables
+•	Correlation of words with Score
+•	Distribution & Visualization of basic variables
+o	Score
+•	Text Analysis
+o	nGram analysis?
+o	Corelation with words and score
+•	Model – not including Text – with text
+•	Get actual product data
+
+
+
+```{r}
+grouped_data<-df2 %>%  #data grouped by product and given num_reviews and num_score
+  group_by(asin) %>% 
+  summarise(meanScore=mean(Rating),nReviews=n()) %>% 
+  mutate(meanScore=round(meanScore,1))
+
+ggplot(grouped_data,aes(x=meanScore))+geom_bar(stat="count")+theme_economist()
+
+```
+
