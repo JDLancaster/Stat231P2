@@ -18,21 +18,15 @@ library(gridExtra)
 library(tidytext)
 library(ggthemes)
 library(tm)
+library(reshape2)
 ```
-
-```{r}
-
-
-
-```
-
 
 ```{r cars}
-musical <- jsonlite::stream_in(file("Project Data/reviews_Musical_Instruments_5.json"))
+automotive <- jsonlite::stream_in(file("Project Data/reviews_Automotive_5.json"))%>% 
+  mutate(name="automotive")
 
-automotive <- jsonlite::stream_in(file("Project Data/reviews_Automotive_5.json"))
-
-amazon_instant <- jsonlite::stream_in(file("Project Data/reviews_Amazon_Instant_Video_5.json"))
+amazon_instant <- jsonlite::stream_in(file("Project Data/reviews_Amazon_Instant_Video_5.json"))%>% 
+  mutate(name="amazon_instant")
 
 apps_for_android <- jsonlite::stream_in(file("Project Data/reviews_Apps_for_Android_5.json"))
 
@@ -62,7 +56,8 @@ kindle_store <- jsonlite::stream_in(file("Project Data/reviews_Kindle_Store_5.js
 
 movies_and_tv <- jsonlite::stream_in(file("Project Data/reviews_Movies_and_TV_5.json"))
 
-musical_instruments <- jsonlite::stream_in(file("Project Data/reviews_Musical_Instruments_5.json"))
+musical <- jsonlite::stream_in(file("Project Data/reviews_Musical_Instruments_5.json")) %>% 
+  mutate(name="musical")
 
 office_products <- jsonlite::stream_in(file("Project Data/reviews_Office_Products_5.json"))
 
@@ -80,24 +75,8 @@ video_games<- jsonlite::stream_in(file("Project Data/reviews_Video_Games_5.json"
 
 #df<-rbind(amazon_instant,apps_for_android, automotive, baby, cds_vinyl, cell_phones_and_accessories, clothing_shoes, digital_music, electronics, grocery, health_and_personal, home_kitchen, kindle_store, movies_and_tv, musical, office_products, patio_lawn, pet, sports_outdoors, tools, toys_games, video_games)
 
-df<-rbind(amazon_instant,apps_for_android,automotive,musical)
+df<-rbind(amazon_instant,automotive,musical)
 ```
-
-```{r}
-#musical$helpful<-
-#musical$out_of<-
-  
-musical$helpful<-toString(musical$helpful)
-str(musical$helpful)
-musical$helpful[2]
-ay<-musical$helpful[2]
-ay
-table(musical$helpful)
-str(musical$helpfulp)
-readr::parse_number(sub(" .*", "", ay))
-as.numeric(gsub("([0-9]+).*$", "\\1", sub(" .*", "", ay)))
-```
-
 
 ```{r}
 deduped <- df[!duplicated(df$reviewText), ]
@@ -108,7 +87,7 @@ deduped$id <- 1:nrow(deduped)
 ```
 
 ```{r}
-df<-select(df,reviewerID,asin, reviewText, overall, summary, reviewTime)
+df<-select(deduped,reviewerID,asin, reviewText, overall, summary, reviewTime,helpful,name)
 ```
 
 
@@ -202,6 +181,13 @@ beta_spread
 df2<- df %>% 
   mutate(reviewLength=stri_length(reviewText)) %>% 
   rename(Rating=overall)
+
+test <- df2 %>% 
+  select(helpful) %>% 
+  unlist()
+
+df2<-df2 %>% 
+  mutate(helpful=test[c(T,F)],not_helpful=test[c(F,T)]-test[c(T,F)])
 ```
 
 
@@ -213,7 +199,28 @@ Distrubution and Visualization of the Variables
 #Helpful, Rating, reviewLengthFactor
 
 #Helpful
-ggplot(df2,aes(x=helpful))+scale_x_continuous(limits = c(-1, 10),breaks=c(0,2,4,6,8,10))+geom_bar()
+a<-ggplot(df2,aes(x=helpful))+geom_bar(stat="count")+scale_x_continuous(limits = c(-1,5))
+b<-ggplot(df2,aes(x=not_helpful))+geom_bar(stat="count")+scale_x_continuous(limits = c(-1,5))
+
+ggplot(df2, aes(helpful)) + 
+  geom_bar(aes(x = helpful, stat="count")) + 
+  geom_bar(aes(x = not_helpful, stat="count")) +
+  scale_x_continuous(limits = c(-1,5))
+
+
+aa<-melt(df2)
+grid.arrange(a,b,nrow=1)
+
+
+ggplot(helpful_frame, aes(, fill = veg)) + geom_density(alpha = 0.2)
+
+
+
+a+b
+a+b+scale_x_continuous(limits = c(-1, 10),breaks=c(0,2,4,6,8,10))+geom_bar(aes(fill = drv), position = position_stack(reverse = TRUE)) +
+coord_flip() +
+theme(legend.position = "top")
+
 
 #Rating
 ggplot(df2,aes(x=Rating))+geom_bar(stat="count",aes(fill=as.factor(Rating)))+geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1)+ggtitle("Ratings Distribution")+scale_fill_hue(c=500, l=100)+theme(legend.position="none")
