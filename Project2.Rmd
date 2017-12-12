@@ -181,7 +181,7 @@ beta_spread
 df2<- df %>% 
   mutate(reviewLength=stri_length(reviewText)) %>% 
   rename(Rating=overall)
-
+ 
 test <- df2 %>% 
   select(helpful) %>% 
   unlist()
