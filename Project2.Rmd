@@ -203,14 +203,14 @@ ap_top_terms <- ap_topics %>%
   ungroup() %>%
   arrange(topic, -beta)
 
-my_title<-"Categories grouped on: Amazon Instant Video, Automotive, Digital Music, Musical Instruments, Office Products, Patio/Lawn, Pets, and Tools"
+print("Categories grouped on: Amazon Instant Video, Automotive, Digital Music, Musical Instruments, Office Products, Patio/Lawn, Pets, and Tools")
 
-ap_top_terms %>%
+a<-ap_top_terms %>%
   mutate(term = reorder(term, beta)) %>%
   ggplot(aes(term, beta, fill = factor(topic))) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
-  coord_flip()+ggtitle(wrapper(my_title, width = 20))
+  coord_flip()+ggtitle("Text Groups")
 
 beta_spread <- ap_topics %>%
   mutate(topic = paste0("topic", topic)) %>%
