@@ -84,6 +84,29 @@ deduped$reviewTime <- as.POSIXct(deduped$reviewTime, format = "%m %d, %Y", tz = 
 deduped$reviewText<- as.character(deduped$reviewText)
 deduped$id <- 1:nrow(deduped)
 deduped$reviewTime <- as.POSIXct(deduped$reviewTime)
+deduped$helpful<-1
+
+
+n<-c(1,3,"as")
+a<-n %>% 
+  dplyr::combine()
+
+
+```
+
+```{r}
+df2<- df %>% 
+  mutate(reviewLength=stri_length(reviewText)) %>% 
+  rename(Rating=overall)
+  
+
+df2 %>% 
+  mutate(reviewLength=stri_length(reviewText)) %>% 
+  rename(Rating=overall) %>% 
+  mutate(helpful_final = dplyr::combine(helpful)[c(T,F)],
+         not_helpful_final =dplyr::combine(helpful)[c(F,T)] - dplyr::combine(helpful)[c(T,F)],
+         perc_helpful_final =ifelse(helpful_final==0 , 0, helpful_final / (helpful_final + not_helpful_final))) %>% 
+  select(-helpful)1
 ```
 
 ```{r}
