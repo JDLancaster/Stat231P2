@@ -83,7 +83,7 @@ deduped <- df[!duplicated(df$reviewText), ]
 deduped$reviewTime <- as.POSIXct(deduped$reviewTime, format = "%m %d, %Y", tz = "EST")
 deduped$reviewText<- as.character(deduped$reviewText)
 deduped$id <- 1:nrow(deduped)
-#deduped$reviewTime <- as.POSIXct(deduped$reviewTime)
+deduped$reviewTime <- as.POSIXct(deduped$reviewTime)
 ```
 
 ```{r}
@@ -187,7 +187,7 @@ test <- df2 %>%
   unlist()
 
 df2<-df2 %>% 
-  mutate(helpful=test[c(T,F)],not_helpful=test[c(F,T)]-test[c(T,F)])
+  mutate(helpful=test[c(T,F)],not_helpful=test[c(F,T)]-test[c(T,F)],perc_helpful=ifelse(helpful==0,0,helpful/(helpful+not_helpful)))
 ```
 
 
@@ -199,44 +199,40 @@ Distrubution and Visualization of the Variables
 #Helpful, Rating, reviewLengthFactor
 
 #Helpful
-a<-ggplot(df2,aes(x=helpful))+geom_bar(stat="count")+scale_x_continuous(limits = c(-1,5))
-b<-ggplot(df2,aes(x=not_helpful))+geom_bar(stat="count")+scale_x_continuous(limits = c(-1,5))
-
-ggplot(df2, aes(helpful)) + 
-  geom_bar(aes(x = helpful, stat="count")) + 
-  geom_bar(aes(x = not_helpful, stat="count")) +
-  scale_x_continuous(limits = c(-1,5))
-
-
-aa<-melt(df2)
-grid.arrange(a,b,nrow=1)
-
-
-ggplot(helpful_frame, aes(, fill = veg)) + geom_density(alpha = 0.2)
-
-
-
-a+b
-a+b+scale_x_continuous(limits = c(-1, 10),breaks=c(0,2,4,6,8,10))+geom_bar(aes(fill = drv), position = position_stack(reverse = TRUE)) +
-coord_flip() +
-theme(legend.position = "top")
-
+ggplot(df2,aes(x=Rating,y=perc_helpful,group=Rating,fill=Rating))+geom_boxplot()+scale_y_continuous(limits = c(.001,1.00001))+guides(fill=FALSE)+ylab("% Reviews Helpful") #removing perc_helpful==-0 values as they are most likely the 0,0 helpful/not_helpful ones
 
 #Rating
-ggplot(df2,aes(x=Rating))+geom_bar(stat="count",aes(fill=as.factor(Rating)))+geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1)+ggtitle("Ratings Distribution")+scale_fill_hue(c=500, l=100)+theme(legend.position="none")
+ggplot(df2,aes(x=Rating))+geom_bar(stat="count",aes(fill=as.factor(Rating)))+geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1)+ggtitle("Ratings Distribution")+theme(legend.position="none")
 #ReviewLengthFactor
-ggplot(df2,aes(x=reviewLength))+geom_bar(stat="count")
+ggplot(df2,aes(x=reviewLength))+geom_bar(stat="count")+scale_x_continuous(limits = c(0,1000))+theme_classic()#Values more than 1000 continued the trend
 
 #Extra Stuff
 #Prolific User vs avgRating
+prolific_users<-df2 %>% 
+  group_by(reviewerID) %>% 
+  summarise(reviews=n(),meanRating=mean(Rating),meanLength=mean(reviewLength),popularity=sum(helpful)-sum(not_helpful))
+
+ggplot(prolific_users,aes(x=reviews,meanRating))+geom_point()+stat_smooth()+scale_x_continuous(limits = c(5,50)) 
+#as reviews increase, scores tend to go down
+
 #Prolific User vs Helpful
+next_plot_data<-prolific_users %>% 
+  filter(popularity>-25 & popularity<50, reviews<20 & reviews>4)
+
+ggplot(next_plot_data,aes(x=popularity,y=reviews,fill=meanRating)) + geom_raster(hjust=0,vjust=0)
+
+ggplot(next_plot_data,aes(x=reviews,y=popularity,fill=meanRating))+geom_raster(interpolate = F)
+
+ggplot(filter(prolific_users,popularity<500 & popularity > -200),
+  aes(x=popularity,y=meanRating,color=meanLength)) + 
+  geom_point() + 
+  stat_smooth()
 ```
 
 
 ```{r}
 #Distribution of Rating itself
-table(df2$Rating)
-
+hist(df2$Rating)
 ```
 
 
@@ -245,7 +241,6 @@ table(df2$Rating)
 ggplot(df2,aes(x=reviewLength))+geom_density()
 
 df2<-sample_n(df2, 10000)
-
 
 df2<-df2 %>% 
   filter(reviewLength<6000) %>% 
