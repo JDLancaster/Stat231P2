@@ -28,8 +28,6 @@ automotive <- jsonlite::stream_in(file("Project Data/reviews_Automotive_5.json")
 amazon_instant <- jsonlite::stream_in(file("Project Data/reviews_Amazon_Instant_Video_5.json"))%>% 
   mutate(name="amazon_instant")
 
-testing_3
-
 # #apps_for_android <- jsonlite::stream_in(file("Project Data/reviews_Apps_for_Android_5.json"))
 # 
 # #baby <- jsonlite::stream_in(file("Project Data/reviews_Baby_5.json"))
@@ -46,8 +44,6 @@ testing_3
 
 digital_music <- jsonlite::stream_in(file("Project Data/reviews_Digital_Music_5.json"))%>% 
   mutate(name="digital_music")
-
-
 
 # #electronics <- jsonlite::stream_in(file("Project Data/reviews_Electronics_5.json"))
 # 
@@ -99,14 +95,14 @@ deduped$reviewTime <- as.POSIXct(deduped$reviewTime)
 df2 <- deduped%>% 
   mutate(reviewLength=stri_length(reviewText)) %>% 
   rename(Rating=overall) %>% 
+  filter(reviewLength<6000) %>% 
   mutate(helpful_final = dplyr::combine(helpful)[c(T,F)],
          not_helpful_final =dplyr::combine(helpful)[c(F,T)] - dplyr::combine(helpful)[c(T,F)],
-         perc_helpful_final =ifelse(helpful_final==0 , 0, helpful_final / (helpful_final + not_helpful_final))) %>% 
+         perc_helpful_final =ifelse(helpful_final==0 , 0, 
+         helpful_final / (helpful_final + not_helpful_final)), Rating_Scaled=Rating/5,               reviewLengthFactor=ifelse(reviewLength<200,"Short",ifelse(reviewLength<600,"Medium","Long"))) %>% 
   select(-helpful)
 colnames(df2)
-df2_sampled<-sample_n(df2,10000) %>% 
-  filter(reviewLength<6000) %>% 
-  mutate(reviewLengthFactor=ifelse(reviewLength<200,"Short",ifelse(reviewLength<600,"Medium","Long")))
+df2_sampled<-sample_n(df2,10000)
 ```
 
 
@@ -237,6 +233,17 @@ beta_spread
 ```
 
 ```{r}
-formula<-"overall~helpful_final+name+reviewLengthFactor"
+train<-sample_n(df2,100000)
+test<-anti_join(df2,train)
+formula<-"Rating~helpful_final+reviewLength+name+not_helpful_final"
+mod<-lm(formula,data=train)
+summary(mod)
+
+test$prediction<-(predict(mod,test))
+error<-test$Rating-test$prediction
+mse<-sqrt(mean(error^2))
+mse
+
+ggplot(test,aes(prediction))+geom_density(stat="count")+scale_x_continuous(limits = c(4,5))
 ```
 
