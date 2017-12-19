@@ -103,8 +103,8 @@ df2 <- deduped%>%
          not_helpful_final =dplyr::combine(helpful)[c(F,T)] - dplyr::combine(helpful)[c(T,F)],
          perc_helpful_final =ifelse(helpful_final==0 , 0, helpful_final / (helpful_final + not_helpful_final))) %>% 
   select(-helpful)
-
-df2a<-sample_n(df2,10000) %>% 
+colnames(df2)
+df2_sampled<-sample_n(df2,10000) %>% 
   filter(reviewLength<6000) %>% 
   mutate(reviewLengthFactor=ifelse(reviewLength<200,"Short",ifelse(reviewLength<600,"Medium","Long")))
 ```
@@ -129,18 +129,28 @@ Distrubution and Visualization of the Variables
 
 ```{r}
 ##Tier 1: Rating
-ggplot(df2a,aes(x=Rating))+geom_bar(stat="count",aes(fill=as.factor(Rating)))+geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1)+ggtitle("Ratings Distribution")+theme(legend.position="none")
-#Ratings vs Helpful
-ggplot(df2a,aes(x=Rating,y=perc_helpful_final,group=Rating))+geom_boxplot()+scale_y_continuous(limits = c(0.00001,1))+ggtitle("Percent of votes as 'Helpful' vs Rating")+ylab("% of Votes as 'Helpful'")
-#Ratings vs ReviewLength
-ggplot(df2a,aes(x=Rating,fill=reviewLengthFactor))+geom_bar(stat="count")+ggtitle("Rating Distriubtion based on Review Length")
-
-
-##Tier 1: ReviewLength
-ggplot(df2a,aes(x=reviewLength,fill="red"))+geom_density()+scale_x_continuous(limits = c(0,1000))+theme_classic()+theme(legend.position="none")+ggtitle("Distribution of ReviewLength")#Values more than 1000 continued the trend
-#ReviewLength vs Helpful
-ggplot(filter(df2a,helpful_final<100), aes(x=reviewLength, y=helpful_final))+geom_point()+stat_smooth()+ylab("Helpful Votes")+ggtitle("ReviewLength vs # of Helpful Votes")
+ggplot(df2_sampled,aes(x=Rating))+geom_bar(stat="count",aes(fill=as.factor(Rating)))+geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1)+ggtitle("Ratings Distribution")+theme(legend.position="none")
 ```
+BREAKDOWN OF RATINGS 1-5 - ALMOST ALL 5
+```{r}
+#Ratings vs Helpful
+ggplot(df2_sampled,aes(x=Rating,y=perc_helpful_final,group=Rating))+geom_boxplot()+scale_y_continuous(limits = c(0.00001,1))+ggtitle("Percent of votes as 'Helpful' vs Rating")+ylab("% of Votes as 'Helpful'")
+```
+BOXPLOT OF RATING VS % OF VOTES = HELPFUL - WHEN RATING GOES TO 5, THE % OF VOTES = HELPFUL APPROACHES 100%.  WE HAD TO REMOVE THE 0% HELPFUL BECAUSE IT MESSED UP THE SCALE AS MOST HAVE 0/0
+```{r}
+#Ratings vs ReviewLength
+ggplot(df2_sampled,aes(x=Rating,fill=reviewLengthFactor))+geom_bar(stat="count")+ggtitle("Rating Distriubtion based on Review Length")
+```
+3 TONED BOXPLOT OF REVIEWLENGTHFACTOR - LONG MEDIUM AND SHORT ARE EVENLY DISTRIBUTED ACROSS RATING
+
+```{r}
+##Tier 1: ReviewLength
+ggplot(df2_sampled,aes(x=reviewLength,fill="red"))+geom_density()+scale_x_continuous(limits = c(0,1000))+theme_classic()+theme(legend.position="none")+ggtitle("Distribution of ReviewLength")#Values more than 1000 continued the trend
+```
+
+#ReviewLength vs Helpful
+ggplot(filter(df2_sampled,helpful_final<100), aes(x=reviewLength, y=helpful_final))+geom_point()+stat_smooth()+ylab("Helpful Votes")+ggtitle("ReviewLength vs # of Helpful Votes")
+
 
 ```{r}
 ##Tier 2: Prolific Reviewers
@@ -169,13 +179,13 @@ ggplot(filter(prolific_products,reviews<45),aes(x=reviews,y=avg_popularity))+geo
 
 Text Analysis for Groups
 ```{r}
-temp <- df2a %>%
+temp <- df2_sampled %>%
   unnest_tokens(word, reviewText) %>%
   anti_join(stop_words) %>%
   mutate(word = wordStem(word)) %>%
   count(word, sort = T)
 
-final <- df2a %>%
+final <- df2_sampled %>%
   unnest_tokens(word, reviewText) %>%
   anti_join(stop_words) %>%
   mutate(word = wordStem(word)) %>%
@@ -225,3 +235,8 @@ beta_spread <- ap_topics %>%
 
 beta_spread
 ```
+
+```{r}
+formula<-"overall~helpful_final+name+reviewLengthFactor"
+```
+
