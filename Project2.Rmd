@@ -22,17 +22,18 @@ library(reshape2)
 library(text2vec)
 library(glmnet)
 ```
+
 ##Abstract
-The main objective of this project is to explore and make sense of the massive quantities of data available on amazon reviews.  Are there any patterns present within individual reviews that we can use to draw conclusions about the rating of that review? In order to answer this question, we focused on looking for relationships between the score of a single review (from 1-5) and the rest of the variables in our dataset.  Our final deliverable is a model that predicts what the rating of a review will be based on the rest of the components of review, such as its length and how many people voted it as “helpful”.  We also created a latent dirichlet model to determine if there were any hidden topics within the data that could help us predict rating.
+The main objective of this project is to explore and make sense of the massive quantity of data available on amazon reviews.  Are there any patterns present within these reviews that we can use to draw conclusions about the rating of individual reviews? In order to answer this question, we focused on looking for relationships between the score of a single review (from 1-5) and the rest of the variables in our dataset.  Our final deliverable is a model that predicts what the rating of a review will be based on the rest of the components of the review text.  We also created a latent dirichlet model to determine if there were any hidden topics within the data that could help us predict rating.
 
 ##Introduction
-How can we predict the rating of an amazon review? Although each review has only a few fields, there is plenty of insight to be gained when you look deep enough.  Therefore, in our analysis, we explored both the easily accessible fields in our data, such as review wordcount and number of helpful votes, as well as the latent ones, such as review subtopic, which we accessed through text analysis.
-	First we looked at the fields which were easily accessed in our dataset, such as review length and number of helpful votes.  However, after an extensive EDA and basic multinomial logistic regression, we weren’t able to produce a model that had sufficient predictive power.  Therefore, we turned to the review text in order to predict rating.
-First, we broke down our text analysis by created a latent dirichlet model.  We expected our LDA, a common tool for identifying subtopics in texts, to determine the overall topic of the review.  For example, if the topic was defined by words such as “poor” or “disappointed,” then the rating would be expected to be low, and vice versa.  After removing common contractions and words that would be otherwise unhelpful to our final output, we created our LDA to find those hidden topics within the review text.  However, instead of identifying positive/negative sentiments, our model seemed to simply identify the product categories that we drew our data from.  For example, we were very convinced that the category containing words like “album”, “song”, “sound”, and “track” simply confirmed that we pulled part of our review data from the Digital Music category.  
-Therefore, to better analyze the text in the reviews, we generated a document-term matrix. A document-term matrix describes the frequency of terms in a collection of documents -- reviews in this case. We used this information to create a multinomial logistic regression model that predicts the probability of each rating (1,2,3,4,5). This model performed far better than the logistic regression model we used that did not include any information about text review data. 
+  How can we predict the rating of an amazon review? Although each review has only a few fields, there is plenty of insight to be gained.  Therefore, in our analysis, we explored both the easily accessible fields in our data, such as review wordcount and number of helpful votes, as well as the latent ones.
+	First we looked at the fields which were easily accessible in our dataset, such as review length and number of helpful votes.  However, after an extensive EDA and basic multinomial logistic regression, we weren’t able to produce a model that had sufficient predictive power. Therefore, we turned to the review text in order to predict rating.
+  We broke down our text analysis by creating a latent dirichlet model.  We expected our LDA, a common tool for identifying subtopics in texts, to determine the overall topic of the reviews.  For example, if the topic were defined by words such as “poor” or “disappointed,” then the rating would be expected to be low, and vice versa.  After removing common contractions and other unhelpful words, we created our LDA to find those hidden topics within the review text.  However, instead of identifying positive/negative sentiments, our model seemed to simply identify the product categories that we drew our data from.  For example, we were very convinced that the category containing words like “album”, “song”, “sound”, and “track” simply confirmed that we pulled part of our review data from the Digital Music category.  
+  Therefore, to better analyze the text in the reviews, we generated a document-term matrix. A document-term matrix describes the frequency of terms in a collection of documents - reviews in this case. We used this information to create a multinomial logistic regression model that predicts the probability of each rating (1,2,3,4,5). This model performed far better than the logistic regression model we used that did not include any information about text review data. 
 
 ##Data
-Our data contained over 19 million reviews from products in 13 categories across Amazon’s site.  For each review, our data contains a unique reviewer ID key, a unique product ID key, reviewer name, the helpfulness of the review (as voted on by other Amazon users), the text in the review, a summary, the time of the review, and the rating (1-5). The data comes from Amazon reviews from May 1996 to July 2014. The data we used was reduced to 5-core. This means that each of the users and reviews in our dataset have at most 5 reviews each. 
+Our data contained over 19 million reviews from products in 13 categories across Amazon’s site.  For each review, our data contains a unique reviewer ID key, a unique product ID key, reviewer name, the helpfulness of the review (as voted on by other Amazon users), the text in the review, a summary, the time of the review, and the rating (1-5). The data comes from Amazon reviews from May 1996 to July 2014. The data we used was reduced to 5-core. This means that each of the users and reviews in our dataset have at most 5 reviews each. Due to the nature of our extremely large dataset, we attempted to use Spark and Hadoop to store and process the data.  This document uses a subset of the entire dataset. Cf Project2_HADOOP-temp.Rmd for reference.
 
 ```{r,echo=F}
 # read in json data if not using hadoop
@@ -133,7 +134,7 @@ deduped$id <- 1:nrow(deduped)
 deduped$reviewTime <- as.POSIXct(deduped$reviewTime)
 ```
 
-```{r}
+```{r,echo=F}
 # create new basic variables and parse "helpful variable"
 # create new sampled dataset
 
@@ -147,8 +148,7 @@ df2 <- deduped%>%
          perc_helpful_final = ifelse(helpful_final==0 , 0, helpful_final / (helpful_final + not_helpful_final)), 
          Rating_Scaled=Rating/5,
          reviewLengthFactor=ifelse(reviewLength<200,"Short", ifelse(reviewLength<600,"Medium","Long"))) %>% 
-  select(-helpful)
-colnames(df2)
+  select(-helpful) #helpful is now redundant
 df2_sampled<-sample_n(df2,13000)
 ```
 
@@ -156,7 +156,6 @@ Distrubution and Visualization of the Variables
 
 ```{r}
 # Tier 1: Rating
-
 ggplot(df2_sampled,aes(x=Rating))+
   geom_bar(stat="count",aes(fill=as.factor(Rating))) +
   geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1) +
@@ -177,11 +176,9 @@ Here we have a boxplot of rating vs the ratio of helpful votes to total votes (%
 
 ggplot(df2_sampled,aes(x=Rating,fill=reviewLengthFactor)) +
   geom_bar(stat="count") +
-  ggtitle("Rating Distriubtion based on Review Length")
+  ggtitle("Rating Distribution based on Review Length")
 ```
 Here we have a stacked boxplot of review length that we grouped by factor.  We can see that the distribution of short, medium and long reviews are very even across the different ratings.
-
-
 ```{r}
 # Tier 1: ReviewLength
 
@@ -280,7 +277,7 @@ ggplot(filter(prolific_products,
 
 Text Analysis for Groups
 ```{r}
-# Tokenize review text, create word stems, and remove stop words
+# Tokenize review text, create word stems, and remove stop words (such as conjunctions)
 
 temp <- df2_sampled %>%
   unnest_tokens(word, reviewText) %>%
@@ -353,17 +350,14 @@ beta_spread
 # running on sample of original data
 # glmnet multinomial logistic regression using glmnet
 
-# create train/test split
-
 df_features <- df2_sampled
-
 normalized <- function(x){(x-min(x))/(max(x)-min(x))}
-
 df_features$rating_scale <- normalized(df_features$Rating)
+
+# create train/test split
 
 train<-sample_n(df2_sampled,10000)
 test<-anti_join(df2_sampled,train)
-
 
 # Create vocabulary
 
@@ -422,12 +416,11 @@ test$pred_5 <- preds2$`5.1`
 
 #Results & Diagnostics
 
-	Our model directly addresses our research question: can we predict amazon review ratings well based on review text data? It takes the text from the amazon review and metadata and tries to predict the review rating (1-5). Our coefficients in our multinomial logistic regression model correspond to terms found in the review. They appear in the document-term matrix generated from the train and test data and their frequencies are used by the multinomial logistic regression model. Because there are so many terms, it is not reasonable for us to interpret all of them in context. However, it is clear that the words in a review and their frequencies are important in determining the rating of a review. 
+	Our model directly addresses our research question: can we predict amazon review ratings accurately based on review text data? It takes the text from the amazon review and metadata and tries to predict the review rating (1-5). The coefficients in our multinomial logistic regression model correspond to terms found in the review. They appear in the document-term matrix generated from the train and test data and their frequencies are used by the multinomial logistic regression model. Because there are so many terms, it is not reasonable for us to interpret all of them in context. However, it is clear that the words in a review and their frequencies are important in determining the rating of a review. 
 	Our model performs decently, with a MSE of .65. The multinomial logistic model with no text data performed much worse, with an MSE of >1. We believe that this indicates that there is a clear relationship between the contents of review text and the actual review rating. 
 	
 ##Conclusion
 
-Our results point towards a relationship between review text data and review rating since our model when including information about text data performed significantly better than our model that did not contain any text data. We ended up with an MSE of .65 using our model on out-of-sample data. This result is ok, but not good enough to be of much use. 
-However, there is much more that we could have done to improve our model’s performance. We could have identified common words that don’t have much meaning and removed them, created n-grams of the data, performed transformations on the data, performed some sort of sentiment analysis, combined text and non-text features, or experimented with different types of models. Our model barely scratches the surface of the text mining and feature engineering that we could have done with the text in the review data. We decided to focus our project on managing the large amount of data that we had in hadoop instead of experimenting with models and feature engineering. 
-Moreover, we only performed our analysis on a small portion of the data that we had, sampling from subset of review categories. We did not manage to get spark to work efficiently and primarily used our cluster to simply hold the data. Our results should not be used for any serious purposes, as our model is not representative of the entire amazon review dataset and our model does not take into account many important text features that can be extracted. 
-
+  Our results point towards a relationship between review text data and review rating since our model that includes information about text data performed significantly better than our model that did not. We ended up with an MSE of .65 using our model on out-of-sample data. This result is OK, but not good enough to be of much use. 
+  However, there is much more that we could have done to improve our model’s performance. We could have identified common words that don’t have much meaning and removed them, created n-grams of the data, performed transformations on the data, performed some sort of sentiment analysis, combined text and non-text features, and experimented with different types of models. Our model barely scratches the surface of the text mining and feature engineering that is available for the text in the review data. We decided to focus our project on managing the large amount of data that we had in hadoop instead of experimenting with models and feature engineering. 
+  Moreover, we only performed our analysis on a small portion of the data that we had, sampling from a subset of review categories. We did not manage to get spark to work efficiently and primarily used our cluster to simply hold the data. Our results should not be used for any serious purposes, as our model is not representative of the entire amazon review dataset and our model does not take into account many important text mining features that could be utilized. 
