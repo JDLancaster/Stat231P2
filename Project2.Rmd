@@ -5,7 +5,7 @@ date: "11/15/2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(jsonlite)
 library(tidyverse)
@@ -20,11 +20,21 @@ library(ggthemes)
 library(tm)
 library(reshape2)
 library(text2vec)
-
 library(glmnet)
 ```
+##Abstract
+The main objective of this project is to explore and make sense of the massive quantities of data available on amazon reviews.  Are there any patterns present within individual reviews that we can use to draw conclusions about the rating of that review? In order to answer this question, we focused on looking for relationships between the score of a single review (from 1-5) and the rest of the variables in our dataset.  Our final deliverable is a model that predicts what the rating of a review will be based on the rest of the components of review, such as its length and how many people voted it as “helpful”.  We also created a latent dirichlet model to determine if there were any hidden topics within the data that could help us predict rating.
 
-```{r cars}
+##Introduction
+How can we predict the rating of an amazon review? Although each review has only a few fields, there is plenty of insight to be gained when you look deep enough.  Therefore, in our analysis, we explored both the easily accessible fields in our data, such as review wordcount and number of helpful votes, as well as the latent ones, such as review subtopic, which we accessed through text analysis.
+	First we looked at the fields which were easily accessed in our dataset, such as review length and number of helpful votes.  However, after an extensive EDA and basic multinomial logistic regression, we weren’t able to produce a model that had sufficient predictive power.  Therefore, we turned to the review text in order to predict rating.
+First, we broke down our text analysis by created a latent dirichlet model.  We expected our LDA, a common tool for identifying subtopics in texts, to determine the overall topic of the review.  For example, if the topic was defined by words such as “poor” or “disappointed,” then the rating would be expected to be low, and vice versa.  After removing common contractions and words that would be otherwise unhelpful to our final output, we created our LDA to find those hidden topics within the review text.  However, instead of identifying positive/negative sentiments, our model seemed to simply identify the product categories that we drew our data from.  For example, we were very convinced that the category containing words like “album”, “song”, “sound”, and “track” simply confirmed that we pulled part of our review data from the Digital Music category.  
+Therefore, to better analyze the text in the reviews, we generated a document-term matrix. A document-term matrix describes the frequency of terms in a collection of documents -- reviews in this case. We used this information to create a multinomial logistic regression model that predicts the probability of each rating (1,2,3,4,5). This model performed far better than the logistic regression model we used that did not include any information about text review data. 
+
+##Data
+Our data contained over 19 million reviews from products in 13 categories across Amazon’s site.  For each review, our data contains a unique reviewer ID key, a unique product ID key, reviewer name, the helpfulness of the review (as voted on by other Amazon users), the text in the review, a summary, the time of the review, and the rating (1-5). The data comes from Amazon reviews from May 1996 to July 2014. The data we used was reduced to 5-core. This means that each of the users and reviews in our dataset have at most 5 reviews each. 
+
+```{r,echo=F}
 # read in json data if not using hadoop
 # combine and label
 
@@ -112,7 +122,7 @@ df<-rbind(amazon_instant,automotive,digital_music,
           musical,office_products,patio_lawn,pet,tools)
 ```
 
-```{r}
+```{r,echo=F}
 #remove duplicates, add id, reformat date
 
 deduped <- df[!duplicated(df$reviewText), ]
@@ -130,36 +140,16 @@ deduped$reviewTime <- as.POSIXct(deduped$reviewTime)
 df2 <- deduped%>% 
   mutate(reviewLength=stri_length(reviewText)) %>% 
   rename(Rating=overall) %>% 
-  filter(reviewLength<6000) %>% 
-  mutate(helpful_final = dplyr::combine(helpful)[c(T,F)],
-         not_helpful_final = 
-           dplyr::combine(helpful)[c(F,T)] - 
-           dplyr::combine(helpful)[c(T,F)],
-         perc_helpful_final =ifelse(helpful_final==0 , 0, 
-         helpful_final / (helpful_final + not_helpful_final)), 
+  filter(reviewLength<6000) %>% #removing outliers
+  mutate(helpful_final = dplyr::combine(helpful)[c(T,F)], 
+         #the [c(T,F)] structure selects only the desired section of helpful, which was originally a list
+         not_helpful_final = dplyr::combine(helpful)[c(F,T)] - dplyr::combine(helpful)[c(T,F)],
+         perc_helpful_final = ifelse(helpful_final==0 , 0, helpful_final / (helpful_final + not_helpful_final)), 
          Rating_Scaled=Rating/5,
-         reviewLengthFactor=ifelse(
-           reviewLength<200,"Short",
-           ifelse(reviewLength<600,"Medium","Long"))) %>% 
+         reviewLengthFactor=ifelse(reviewLength<200,"Short", ifelse(reviewLength<600,"Medium","Long"))) %>% 
   select(-helpful)
 colnames(df2)
 df2_sampled<-sample_n(df2,13000)
-```
-
-
-```{r}
-# data(stop_words)
-# deduped %>%
-#   unnest_tokens(word, reviewText) %>%
-#   anti_join(stop_words) %>%
-#   mutate(word = wordStem(word)) %>%
-#   count(word, sort = T) %>%
-#   filter(n>3000) %>%
-#   mutate(word = reorder(word, n)) %>%
-#   ggplot(aes(word, n)) +
-#   geom_col() +
-#   xlab(NULL) +
-#   coord_flip()
 ```
 
 Distrubution and Visualization of the Variables
@@ -172,17 +162,16 @@ ggplot(df2_sampled,aes(x=Rating))+
   geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1) +
   ggtitle("Ratings Distribution")+theme(legend.position="none")
 ```
-BREAKDOWN OF RATINGS 1-5 - ALMOST ALL 5
+Here we have a simple breakdown of the frequency of Ratings.  We can see that the distribution of rating is very left skewed, as most of the ratings are 5-stars.
 ```{r}
 # Ratings vs Helpful
-
 ggplot(df2_sampled,aes(x=Rating,y=perc_helpful_final,group=Rating)) +
   geom_boxplot() + 
   scale_y_continuous(limits = c(0.00001,1)) +
   ggtitle("Percent of votes as 'Helpful' vs Rating") +
   ylab("% of Votes as 'Helpful'")
 ```
-BOXPLOT OF RATING VS % OF VOTES = HELPFUL - WHEN RATING GOES TO 5, THE % OF VOTES = HELPFUL APPROACHES 100%.  WE HAD TO REMOVE THE 0% HELPFUL BECAUSE IT MESSED UP THE SCALE AS MOST HAVE 0/0
+Here we have a boxplot of rating vs the ratio of helpful votes to total votes (% helpful).  As the rating goes up, the % of votes that were helpful approaches 100%. We had to limit the range of acceptable y-values in this plot to y>0 because we only wanted to view point that had more than 0 votes.  The majority of votes had 0 helpful votes and 0 non-helpful votes, so we had to remove those.
 ```{r}
 # Ratings vs ReviewLength
 
@@ -190,7 +179,8 @@ ggplot(df2_sampled,aes(x=Rating,fill=reviewLengthFactor)) +
   geom_bar(stat="count") +
   ggtitle("Rating Distriubtion based on Review Length")
 ```
-3 TONED BOXPLOT OF REVIEWLENGTHFACTOR - LONG MEDIUM AND SHORT ARE EVENLY DISTRIBUTED ACROSS RATING
+Here we have a stacked boxplot of review length that we grouped by factor.  We can see that the distribution of short, medium and long reviews are very even across the different ratings.
+
 
 ```{r}
 # Tier 1: ReviewLength
@@ -200,10 +190,10 @@ ggplot(df2_sampled,aes(x=reviewLength,fill="red")) +
   scale_x_continuous(limits = c(0,1000)) + 
   theme_classic() +
   theme(legend.position="none") +
-  ggtitle("Distribution of ReviewLength")  #Values more than 1000 
-                                           #continued the trend
+  ggtitle("Distribution of ReviewLength")  #  Values more than 1000 
+                                           #  continued the trend
 ```
-
+Here we have a density plot of the distribution of review length (in terms of word count).  We had to limit the range of the x-axis to x<1000 in order to be able to observe the spike in frequency around x=200.
 ```{r}
 # ReviewLength vs Helpful
 
@@ -214,13 +204,13 @@ ggplot(filter(df2_sampled,helpful_final<100),
   ylab("Helpful Votes") +
   ggtitle("ReviewLength vs # of Helpful Votes")
 ```
-
+Here we have a scatterplot that explores the correlation between review length and number of helpful votes.  We can see from the stat smooth line that there is a slight positive correlation between the two.
 
 
 ```{r}
 # Tier 2: Prolific Reviewers
 
-df2b<-sample_n(df2,100000)  # Create dataset with prolific reviewers
+df2b<-sample_n(df2,100000)  #  Create dataset with prolific reviewers
 
 prolific_users<-df2b %>% 
   group_by(reviewerID) %>% 
@@ -363,8 +353,7 @@ beta_spread
 # running on sample of original data
 # glmnet multinomial logistic regression using glmnet
 
-
-#create train/test split
+# create train/test split
 
 df_features <- df2_sampled
 
@@ -395,7 +384,7 @@ t1 = Sys.time()
 dtm_train <- create_dtm(it_train, vectorizer)
 print(difftime(Sys.time(), t1, units = 'sec'))
 
-# Run glmnet with 5-fold cross validation
+# Run glmnet with 4-fold cross validation
 
 nfolds2 = 4
 t1 = Sys.time()
@@ -431,21 +420,14 @@ test$pred_4 <- preds2$`4.1`
 test$pred_5 <- preds2$`5.1`
 ```
 
+#Results & Diagnostics
 
-```{r}
+	Our model directly addresses our research question: can we predict amazon review ratings well based on review text data? It takes the text from the amazon review and metadata and tries to predict the review rating (1-5). Our coefficients in our multinomial logistic regression model correspond to terms found in the review. They appear in the document-term matrix generated from the train and test data and their frequencies are used by the multinomial logistic regression model. Because there are so many terms, it is not reasonable for us to interpret all of them in context. However, it is clear that the words in a review and their frequencies are important in determining the rating of a review. 
+	Our model performs decently, with a MSE of .65. The multinomial logistic model with no text data performed much worse, with an MSE of >1. We believe that this indicates that there is a clear relationship between the contents of review text and the actual review rating. 
+	
+##Conclusion
 
-
-train<-sample_n(df2,100000)
-test<-anti_join(df2,train)
-formula<-"Rating~helpful_final+reviewLength+name+not_helpful_final"
-mod<-lm(formula,data=train)
-summary(mod)
-
-test$prediction<-(predict(mod,test))
-error<-test$Rating-test$prediction
-mse<-sqrt(mean(error^2))
-mse
-
-ggplot(test,aes(prediction))+geom_density(stat="count")+scale_x_continuous(limits = c(4,5))
-```
+Our results point towards a relationship between review text data and review rating since our model when including information about text data performed significantly better than our model that did not contain any text data. We ended up with an MSE of .65 using our model on out-of-sample data. This result is ok, but not good enough to be of much use. 
+However, there is much more that we could have done to improve our model’s performance. We could have identified common words that don’t have much meaning and removed them, created n-grams of the data, performed transformations on the data, performed some sort of sentiment analysis, combined text and non-text features, or experimented with different types of models. Our model barely scratches the surface of the text mining and feature engineering that we could have done with the text in the review data. We decided to focus our project on managing the large amount of data that we had in hadoop instead of experimenting with models and feature engineering. 
+Moreover, we only performed our analysis on a small portion of the data that we had, sampling from subset of review categories. We did not manage to get spark to work efficiently and primarily used our cluster to simply hold the data. Our results should not be used for any serious purposes, as our model is not representative of the entire amazon review dataset and our model does not take into account many important text features that can be extracted. 
 
