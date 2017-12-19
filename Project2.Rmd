@@ -28,6 +28,8 @@ automotive <- jsonlite::stream_in(file("Project Data/reviews_Automotive_5.json")
 amazon_instant <- jsonlite::stream_in(file("Project Data/reviews_Amazon_Instant_Video_5.json"))%>% 
   mutate(name="amazon_instant")
 
+testing_3
+
 # #apps_for_android <- jsonlite::stream_in(file("Project Data/reviews_Apps_for_Android_5.json"))
 # 
 # #baby <- jsonlite::stream_in(file("Project Data/reviews_Baby_5.json"))
@@ -44,6 +46,8 @@ amazon_instant <- jsonlite::stream_in(file("Project Data/reviews_Amazon_Instant_
 
 digital_music <- jsonlite::stream_in(file("Project Data/reviews_Digital_Music_5.json"))%>% 
   mutate(name="digital_music")
+
+
 
 # #electronics <- jsonlite::stream_in(file("Project Data/reviews_Electronics_5.json"))
 # 
@@ -149,7 +153,7 @@ ggplot(filter(prolific_users,reviews<30),aes(x=reviews,meanRating))+geom_point()
 #NumReviews vs MeanLength
 ggplot(filter(prolific_users,meanLength<8000 & reviews<60),aes(x=reviews,meanLength))+geom_point()+stat_smooth()+ggtitle("Mean Review Length (per user) vs num Reviews (per user)")
 #NumReviews vs Helpful
-ggplot(filter(prolific_users,popularity<1000 & reviews<45),aes(x=reviews,popularity))+geom_point()+stat_smooth()+ggtitle("Mean Review Length (per user) vs num Reviews (per user)")
+ggplot(filter(prolific_users,popularity<1000 & reviews<45),aes(x=reviews,popularity))+geom_point()+stat_smooth()+ggtitle("Mean Review Length (per user) vs Popularity (per user)")
 
 ##Tier 2: Prolific Products
 prolific_products<-df2b %>% 
@@ -160,7 +164,7 @@ ggplot(filter(prolific_products,reviews<30),aes(x=reviews,meanRating))+geom_poin
 #NumReviews vs MeanLength
 ggplot(filter(prolific_products,meanLength<8000 & reviews<60),aes(x=reviews,meanLength))+geom_point()+stat_smooth()+ggtitle("Mean Review Length (per product) vs num Reviews (per product)")
 #NumReviews vs Helpful
-ggplot(filter(prolific_products,reviews<45),aes(x=reviews,y=avg_popularity))+geom_point()+stat_smooth()+ggtitle("Mean Review Length (per product) vs num Reviews (per product)")
+ggplot(filter(prolific_products,reviews<45),aes(x=reviews,y=avg_popularity))+geom_point()+stat_smooth()+ggtitle("Mean Review Length (per product) vs Avg Helpfulness (per product)")
 ```
 
 Text Analysis for Groups
@@ -211,7 +215,7 @@ a<-ap_top_terms %>%
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   coord_flip()+ggtitle("Text Groups")
-
+a
 beta_spread <- ap_topics %>%
   mutate(topic = paste0("topic", topic)) %>%
   spread(topic, beta) %>%
