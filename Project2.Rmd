@@ -19,87 +19,126 @@ library(tidytext)
 library(ggthemes)
 library(tm)
 library(reshape2)
+library(text2vec)
 ```
 
 ```{r cars}
-automotive <- jsonlite::stream_in(file("Project Data/reviews_Automotive_5.json"))%>% 
+# read in json data if not using hadoop
+# combine and label
+
+automotive <- jsonlite::stream_in(
+  file("Project Data/reviews_Automotive_5.json"))%>% 
   mutate(name="automotive")
 
-amazon_instant <- jsonlite::stream_in(file("Project Data/reviews_Amazon_Instant_Video_5.json"))%>% 
+amazon_instant <- jsonlite::stream_in(
+  file("Project Data/reviews_Amazon_Instant_Video_5.json"))%>% 
   mutate(name="amazon_instant")
 
-# #apps_for_android <- jsonlite::stream_in(file("Project Data/reviews_Apps_for_Android_5.json"))
+#apps_for_android <- jsonlite::stream_in(
+#  file("Project Data/reviews_Apps_for_Android_5.json"))
 # 
-# #baby <- jsonlite::stream_in(file("Project Data/reviews_Baby_5.json"))
+# baby <- jsonlite::stream_in(
+#   file("Project Data/reviews_Baby_5.json"))
 # 
-# #beauty <- jsonlite::stream_in(file("Project Data/reviews_Beauty_5.json"))
+# beauty <- jsonlite::stream_in(
+#   file("Project Data/reviews_Beauty_5.json"))
 # 
-# #books <- jsonlite::stream_in(file("Project Data/reviews_Books_5.json"))
+# books <- jsonlite::stream_in(
+#   file("Project Data/reviews_Books_5.json"))
 # 
-# #cds_vinyl <- jsonlite::stream_in(file("Project Data/reviews_CDs_and_Vinyl_5.json"))
+# cds_vinyl <- jsonlite::stream_in(
+#   file("Project Data/reviews_CDs_and_Vinyl_5.json"))
 # 
-# #cell_phones_and_accessories<- jsonlite::stream_in(file("Project Data/reviews_Cell_Phones_and_Accessories_5.json"))
+# cell_phones_and_accessories<- jsonlite::stream_in(
+#   file("Project Data/reviews_Cell_Phones_and_Accessories_5.json"))
 # 
-# #clothing_shoes <- jsonlite::stream_in(file("Project Data/reviews_Clothing_Shoes_and_Jewelry_5.json"))
+# clothing_shoes <- jsonlite::stream_in(
+#   file("Project Data/reviews_Clothing_Shoes_and_Jewelry_5.json"))
 
-digital_music <- jsonlite::stream_in(file("Project Data/reviews_Digital_Music_5.json"))%>% 
+digital_music <- jsonlite::stream_in(
+  file("Project Data/reviews_Digital_Music_5.json"))%>% 
   mutate(name="digital_music")
 
-# #electronics <- jsonlite::stream_in(file("Project Data/reviews_Electronics_5.json"))
+# electronics <- jsonlite::stream_in(
+#   file("Project Data/reviews_Electronics_5.json"))
 # 
-# #grocery <- jsonlite::stream_in(file("Project Data/reviews_Grocery_and_Gourmet_Food_5.json"))
+# grocery <- jsonlite::stream_in(file(
+#   "Project Data/reviews_Grocery_and_Gourmet_Food_5.json"))
 # 
-# #health_and_personal <- jsonlite::stream_in(file("Project Data/reviews_Health_and_Personal_Care_5.json"))
+# health_and_personal <- jsonlite::stream_in(
+#   file("Project Data/reviews_Health_and_Personal_Care_5.json"))
 # 
-# #home_kitchen <- jsonlite::stream_in(file("Project Data/reviews_Home_and_Kitchen_5.json"))
+# home_kitchen <- jsonlite::stream_in(file(
+#   "Project Data/reviews_Home_and_Kitchen_5.json"))
 # 
-# #kindle_store <- jsonlite::stream_in(file("Project Data/reviews_Kindle_Store_5.json"))
+# kindle_store <- jsonlite::stream_in(file(
+#   "Project Data/reviews_Kindle_Store_5.json"))
 # 
-# #movies_and_tv <- jsonlite::stream_in(file("Project Data/reviews_Movies_and_TV_5.json"))
+# movies_and_tv <- jsonlite::stream_in(file(
+#   "Project Data/reviews_Movies_and_TV_5.json"))
+# 
+ musical <- jsonlite::stream_in(file(
+   "Project Data/reviews_Musical_Instruments_5.json")) %>% 
+   mutate(name="musical")
 
-musical <- jsonlite::stream_in(file("Project Data/reviews_Musical_Instruments_5.json")) %>% 
-  mutate(name="musical")
-
-office_products <- jsonlite::stream_in(file("Project Data/reviews_Office_Products_5.json"))%>% 
+office_products <- jsonlite::stream_in(
+  file("Project Data/reviews_Office_Products_5.json"))%>% 
   mutate(name="office_products")
 
-patio_lawn <- jsonlite::stream_in(file("Project Data/reviews_Patio_Lawn_and_Garden_5.json"))%>% 
+patio_lawn <- jsonlite::stream_in(
+  file("Project Data/reviews_Patio_Lawn_and_Garden_5.json"))%>% 
   mutate(name="patio_lawn")
 
-pet <- jsonlite::stream_in(file("Project Data/reviews_Pet_Supplies_5.json"))%>% 
+pet <- jsonlite::stream_in(
+  file("Project Data/reviews_Pet_Supplies_5.json"))%>% 
   mutate(name="pet")
 
-# sports_outdoors <- jsonlite::stream_in(file("Project Data/reviews_Sports_and_Outdoors_5.json"))
+ # sports_outdoors <- jsonlite::stream_in(
+ #   file("Project Data/reviews_Sports_and_Outdoors_5.json"))
 
-tools <- jsonlite::stream_in(file("Project Data/reviews_Tools_and_Home_Improvement_5.json"))%>% 
+tools <- jsonlite::stream_in(
+  file("Project Data/reviews_Tools_and_Home_Improvement_5.json"))%>% 
   mutate(name="tools")
 
-# toys_games <- jsonlite::stream_in(file("Project Data/reviews_Toys_and_Games_5.json"))
-# 
-# video_games<- jsonlite::stream_in(file("Project Data/reviews_Video_Games_5.json"))
-# 
-# df<-rbind(amazon_instant,apps_for_android, automotive, baby, cds_vinyl, cell_phones_and_accessories, clothing_shoes, digital_music, electronics, grocery, health_and_personal, home_kitchen, kindle_store, movies_and_tv, musical, office_products, patio_lawn, pet, sports_outdoors, tools, toys_games, video_games)
+ # toys_games <- jsonlite::stream_in(
+ #   file("Project Data/reviews_Toys_and_Games_5.json"))
+ # 
+ # video_games<- jsonlite::stream_in(
+ #   file("Project Data/reviews_Video_Games_5.json"))
 
-df<-rbind(amazon_instant,automotive,digital_music,musical,office_products,patio_lawn,pet,tools)
+df<-rbind(amazon_instant,automotive,digital_music,
+          musical,office_products,patio_lawn,pet,tools)
 ```
 
 ```{r}
+#remove duplicates, add id, reformat date
+
 deduped <- df[!duplicated(df$reviewText), ]
-deduped$reviewTime <- as.POSIXct(deduped$reviewTime, format = "%m %d, %Y", tz = "EST")
+deduped$reviewTime <- as.POSIXct(
+  deduped$reviewTime, format = "%m %d, %Y", tz = "EST")
 deduped$reviewText<- as.character(deduped$reviewText)
 deduped$id <- 1:nrow(deduped)
 deduped$reviewTime <- as.POSIXct(deduped$reviewTime)
 ```
 
 ```{r}
+# create new basic variables and parse "helpful variable"
+# create new sampled dataset
+
 df2 <- deduped%>% 
   mutate(reviewLength=stri_length(reviewText)) %>% 
   rename(Rating=overall) %>% 
   filter(reviewLength<6000) %>% 
   mutate(helpful_final = dplyr::combine(helpful)[c(T,F)],
-         not_helpful_final =dplyr::combine(helpful)[c(F,T)] - dplyr::combine(helpful)[c(T,F)],
+         not_helpful_final = 
+           dplyr::combine(helpful)[c(F,T)] - 
+           dplyr::combine(helpful)[c(T,F)],
          perc_helpful_final =ifelse(helpful_final==0 , 0, 
-         helpful_final / (helpful_final + not_helpful_final)), Rating_Scaled=Rating/5,               reviewLengthFactor=ifelse(reviewLength<200,"Short",ifelse(reviewLength<600,"Medium","Long"))) %>% 
+         helpful_final / (helpful_final + not_helpful_final)), 
+         Rating_Scaled=Rating/5,
+         reviewLengthFactor=ifelse(
+           reviewLength<200,"Short",
+           ifelse(reviewLength<600,"Medium","Long"))) %>% 
   select(-helpful)
 colnames(df2)
 df2_sampled<-sample_n(df2,10000)
@@ -124,57 +163,133 @@ df2_sampled<-sample_n(df2,10000)
 Distrubution and Visualization of the Variables
 
 ```{r}
-##Tier 1: Rating
-ggplot(df2_sampled,aes(x=Rating))+geom_bar(stat="count",aes(fill=as.factor(Rating)))+geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1)+ggtitle("Ratings Distribution")+theme(legend.position="none")
+# Tier 1: Rating
+
+ggplot(df2_sampled,aes(x=Rating))+
+  geom_bar(stat="count",aes(fill=as.factor(Rating))) +
+  geom_text(stat='bin',aes(label=..count..),vjust=-1,binwidth=1) +
+  ggtitle("Ratings Distribution")+theme(legend.position="none")
 ```
 BREAKDOWN OF RATINGS 1-5 - ALMOST ALL 5
 ```{r}
-#Ratings vs Helpful
-ggplot(df2_sampled,aes(x=Rating,y=perc_helpful_final,group=Rating))+geom_boxplot()+scale_y_continuous(limits = c(0.00001,1))+ggtitle("Percent of votes as 'Helpful' vs Rating")+ylab("% of Votes as 'Helpful'")
+# Ratings vs Helpful
+
+ggplot(df2_sampled,aes(x=Rating,y=perc_helpful_final,group=Rating)) +
+  geom_boxplot() + 
+  scale_y_continuous(limits = c(0.00001,1)) +
+  ggtitle("Percent of votes as 'Helpful' vs Rating") +
+  ylab("% of Votes as 'Helpful'")
 ```
 BOXPLOT OF RATING VS % OF VOTES = HELPFUL - WHEN RATING GOES TO 5, THE % OF VOTES = HELPFUL APPROACHES 100%.  WE HAD TO REMOVE THE 0% HELPFUL BECAUSE IT MESSED UP THE SCALE AS MOST HAVE 0/0
 ```{r}
-#Ratings vs ReviewLength
-ggplot(df2_sampled,aes(x=Rating,fill=reviewLengthFactor))+geom_bar(stat="count")+ggtitle("Rating Distriubtion based on Review Length")
+# Ratings vs ReviewLength
+
+ggplot(df2_sampled,aes(x=Rating,fill=reviewLengthFactor)) +
+  geom_bar(stat="count") +
+  ggtitle("Rating Distriubtion based on Review Length")
 ```
 3 TONED BOXPLOT OF REVIEWLENGTHFACTOR - LONG MEDIUM AND SHORT ARE EVENLY DISTRIBUTED ACROSS RATING
 
 ```{r}
-##Tier 1: ReviewLength
-ggplot(df2_sampled,aes(x=reviewLength,fill="red"))+geom_density()+scale_x_continuous(limits = c(0,1000))+theme_classic()+theme(legend.position="none")+ggtitle("Distribution of ReviewLength")#Values more than 1000 continued the trend
+# Tier 1: ReviewLength
+
+ggplot(df2_sampled,aes(x=reviewLength,fill="red")) +
+  geom_density() +
+  scale_x_continuous(limits = c(0,1000)) + 
+  theme_classic() +
+  theme(legend.position="none") +
+  ggtitle("Distribution of ReviewLength")  #Values more than 1000 
+                                           #continued the trend
 ```
 
-#ReviewLength vs Helpful
-ggplot(filter(df2_sampled,helpful_final<100), aes(x=reviewLength, y=helpful_final))+geom_point()+stat_smooth()+ylab("Helpful Votes")+ggtitle("ReviewLength vs # of Helpful Votes")
+```{r}
+# ReviewLength vs Helpful
+
+ggplot(filter(df2_sampled,helpful_final<100), 
+       aes(x=reviewLength, y=helpful_final)) + 
+  geom_point() + 
+  stat_smooth() +
+  ylab("Helpful Votes") +
+  ggtitle("ReviewLength vs # of Helpful Votes")
+```
+
 
 
 ```{r}
-##Tier 2: Prolific Reviewers
-df2b<-sample_n(df2,100000)
+# Tier 2: Prolific Reviewers
+
+df2b<-sample_n(df2,100000)  # Create dataset with prolific reviewers
+
 prolific_users<-df2b %>% 
   group_by(reviewerID) %>% 
-  summarise(reviews=n(),meanRating=mean(Rating),meanLength=mean(reviewLength),popularity=sum(helpful_final)-sum(not_helpful_final))
-#NumReviews vs MeanRating
-ggplot(filter(prolific_users,reviews<30),aes(x=reviews,meanRating))+geom_point()+stat_smooth()+ggtitle("Mean Rating (per user) vs num Reviews (per user)")
-#NumReviews vs MeanLength
-ggplot(filter(prolific_users,meanLength<8000 & reviews<60),aes(x=reviews,meanLength))+geom_point()+stat_smooth()+ggtitle("Mean Review Length (per user) vs num Reviews (per user)")
-#NumReviews vs Helpful
-ggplot(filter(prolific_users,popularity<1000 & reviews<45),aes(x=reviews,popularity))+geom_point()+stat_smooth()+ggtitle("Mean Review Length (per user) vs Popularity (per user)")
+  summarise(reviews=n(),
+            meanRating=mean(Rating),
+            meanLength=mean(reviewLength),
+            popularity=sum(helpful_final) - sum(not_helpful_final))
 
-##Tier 2: Prolific Products
+# NumReviews vs MeanRating
+
+ggplot(filter(prolific_users,reviews<30),aes(x=reviews,meanRating)) +
+  geom_point() +
+  stat_smooth() +
+  ggtitle("Mean Rating (per user) vs num Reviews (per user)")
+
+# NumReviews vs MeanLength
+
+ggplot(filter(prolific_users,
+              meanLength<8000 & reviews<60),
+       aes(x=reviews,meanLength)) +
+  geom_point() +
+  stat_smooth() +
+  ggtitle("Mean Review Length (per user) vs num Reviews (per user)")
+
+# NumReviews vs Helpful
+
+ggplot(filter(prolific_users,
+              popularity<1000 & reviews<45),
+       aes(x=reviews,popularity)) +
+  geom_point() +
+  stat_smooth() +
+  ggtitle("Mean Review Length (per user) vs Popularity (per user)")
+
+# Tier 2: Prolific Products
+
 prolific_products<-df2b %>% 
   group_by(asin) %>% 
-  summarise(reviews=n(),meanRating=mean(Rating),meanLength=mean(reviewLength),avg_popularity=mean(perc_helpful_final))
-#NumReviews vs MeanRating
-ggplot(filter(prolific_products,reviews<30),aes(x=reviews,meanRating))+geom_point()+stat_smooth()+ggtitle("Mean Rating (per product) vs num Reviews (per product)")
-#NumReviews vs MeanLength
-ggplot(filter(prolific_products,meanLength<8000 & reviews<60),aes(x=reviews,meanLength))+geom_point()+stat_smooth()+ggtitle("Mean Review Length (per product) vs num Reviews (per product)")
-#NumReviews vs Helpful
-ggplot(filter(prolific_products,reviews<45),aes(x=reviews,y=avg_popularity))+geom_point()+stat_smooth()+ggtitle("Mean Review Length (per product) vs Avg Helpfulness (per product)")
+  summarise(reviews=n(),
+            meanRating=mean(Rating),
+            meanLength=mean(reviewLength),
+            avg_popularity=mean(perc_helpful_final))
+
+# NumReviews vs MeanRating
+ggplot(filter(prolific_products,reviews<30),
+       aes(x=reviews,meanRating)) +
+  geom_point() +
+  stat_smooth() +
+  ggtitle("Mean Rating (per product) vs num Reviews (per product)")
+
+# NumReviews vs MeanLength
+ggplot(filter(prolific_products,
+              meanLength<8000 & reviews<60),
+       aes(x=reviews,meanLength)) +
+  geom_point() +
+  stat_smooth() +
+  ggtitle("Mean Review Length (per product) vs num Reviews (per product)")
+
+# NumReviews vs Helpful
+
+ggplot(filter(prolific_products,
+              reviews<45),
+       aes(x=reviews,y=avg_popularity)) +
+  geom_point() +
+  stat_smooth() +
+  ggtitle("Mean Review Length (per product) vs Avg Helpfulness (per product)")
 ```
 
 Text Analysis for Groups
 ```{r}
+# Tokenize review text, create word stems, and remove stop words
+
 temp <- df2_sampled %>%
   unnest_tokens(word, reviewText) %>%
   anti_join(stop_words) %>%
@@ -188,6 +303,8 @@ final <- df2_sampled %>%
   left_join(temp, on = "word") %>%
   bind_tf_idf(word, id, n)
 
+# plot top words
+
 final %>%
   arrange(desc(tf_idf)) %>%
   mutate(word = factor(word, levels = rev(unique(word))))%>%
@@ -199,7 +316,11 @@ final %>%
 ```
 
 ```{r}
-mat_final <- final %>%
+# Perform LDA with k=8
+# We hypothesized that the 8 latent factors would correspond 
+# with the 8 Amazon categories the data comes from
+
+mat_final <- final%>%
   cast_dtm(id, word, n)
 
 ap_lda <- LDA(mat_final, k = 8, control = list(seed = 1234))
@@ -214,7 +335,9 @@ ap_top_terms <- ap_topics %>%
   ungroup() %>%
   arrange(topic, -beta)
 
-print("Categories grouped on: Amazon Instant Video, Automotive, Digital Music, Musical Instruments, Office Products, Patio/Lawn, Pets, and Tools")
+print("Categories grouped on: Amazon Instant Video, 
+      Automotive, Digital Music, Musical Instruments, 
+      Office Products, Patio/Lawn, Pets, and Tools")
 
 a<-ap_top_terms %>%
   mutate(term = reorder(term, beta)) %>%
@@ -222,7 +345,9 @@ a<-ap_top_terms %>%
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   coord_flip()+ggtitle("Text Groups")
+
 a
+
 beta_spread <- ap_topics %>%
   mutate(topic = paste0("topic", topic)) %>%
   spread(topic, beta) %>%
@@ -233,6 +358,68 @@ beta_spread
 ```
 
 ```{r}
+
+
+train<-sample_n(df2_sampled,10000)
+test<-anti_join(df2_sampled,train)
+
+
+df_features <- df2_sampled
+
+normalized <- function(x){(x-min(x))/(max(x)-min(x))}
+
+df_features$rating_scale <- normalized(df_features$Rating)
+
+
+prep_fun <- tolower
+tok_fun <- word_tokenizer
+
+it_train <- itoken(df_features$reviewText, 
+             preprocessor = prep_fun, 
+             tokenizer = tok_fun, 
+             ids = df_features$id, 
+             progressbar = FALSE)
+vocab <- create_vocabulary(it_train)
+
+vectorizer <- vocab_vectorizer(vocab)
+t1 = Sys.time()
+dtm_train <- create_dtm(it_train, vectorizer)
+print(difftime(Sys.time(), t1, units = 'sec'))
+
+library(glmnet)
+NFOLDS = 4
+t1 = Sys.time()
+glmnet_classifier = cv.glmnet(x = dtm_train, y = df_features[['Rating']], 
+                              family = 'multinomial', 
+                              # L1 penalty
+                              alpha = 1,
+                              # interested in the area under ROC curve
+                              type.measure = "auc",
+                              # 5-fold cross-validation
+                              nfolds = NFOLDS,
+                              # high value is less accurate, but has faster training
+                              thresh = 1e-3,
+                              # again lower number of iterations for faster training
+                              maxit = 1e3)
+
+it_test = test$review %>% 
+  prep_fun %>% 
+  tok_fun %>% 
+  itoken(ids = test$id, 
+         # turn off progressbar because it won't look nice in rmd
+         progressbar = FALSE)
+
+dtm_test = create_dtm(it_test, vectorizer)
+
+preds = predict(glmnet_classifier, dtm_test, type = 'response')[,1]
+glmnet:::auc(test$sentiment, preds)
+
+```
+
+
+```{r}
+
+
 train<-sample_n(df2,100000)
 test<-anti_join(df2,train)
 formula<-"Rating~helpful_final+reviewLength+name+not_helpful_final"
