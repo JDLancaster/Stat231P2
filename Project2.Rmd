@@ -20,6 +20,8 @@ library(ggthemes)
 library(tm)
 library(reshape2)
 library(text2vec)
+
+library(glmnet)
 ```
 
 ```{r cars}
@@ -141,7 +143,7 @@ df2 <- deduped%>%
            ifelse(reviewLength<600,"Medium","Long"))) %>% 
   select(-helpful)
 colnames(df2)
-df2_sampled<-sample_n(df2,10000)
+df2_sampled<-sample_n(df2,13000)
 ```
 
 
@@ -358,11 +360,11 @@ beta_spread
 ```
 
 ```{r}
+# running on sample of original data
+# glmnet multinomial logistic regression using glmnet
 
 
-train<-sample_n(df2_sampled,10000)
-test<-anti_join(df2_sampled,train)
-
+#create train/test split
 
 df_features <- df2_sampled
 
@@ -370,50 +372,63 @@ normalized <- function(x){(x-min(x))/(max(x)-min(x))}
 
 df_features$rating_scale <- normalized(df_features$Rating)
 
+train<-sample_n(df2_sampled,10000)
+test<-anti_join(df2_sampled,train)
+
+
+# Create vocabulary
 
 prep_fun <- tolower
 tok_fun <- word_tokenizer
 
-it_train <- itoken(df_features$reviewText, 
+it_train <- itoken(train$reviewText, 
              preprocessor = prep_fun, 
              tokenizer = tok_fun, 
-             ids = df_features$id, 
+             ids = train$id, 
              progressbar = FALSE)
 vocab <- create_vocabulary(it_train)
+
+# Vectorize vocab, make document-term matrix (dtm)
 
 vectorizer <- vocab_vectorizer(vocab)
 t1 = Sys.time()
 dtm_train <- create_dtm(it_train, vectorizer)
 print(difftime(Sys.time(), t1, units = 'sec'))
 
-library(glmnet)
-NFOLDS = 4
+# Run glmnet with 5-fold cross validation
+
+nfolds2 = 4
 t1 = Sys.time()
-glmnet_classifier = cv.glmnet(x = dtm_train, y = df_features[['Rating']], 
+glmnet_classifier = cv.glmnet(x = dtm_train, y = train[['Rating']], 
                               family = 'multinomial', 
-                              # L1 penalty
                               alpha = 1,
-                              # interested in the area under ROC curve
-                              type.measure = "auc",
-                              # 5-fold cross-validation
-                              nfolds = NFOLDS,
-                              # high value is less accurate, but has faster training
+                              type.measure = "mse",
+                              nfolds = nfolds2,
                               thresh = 1e-3,
-                              # again lower number of iterations for faster training
                               maxit = 1e3)
 
-it_test = test$review %>% 
+#create dtm for test
+
+it_test = test$reviewText %>% 
   prep_fun %>% 
   tok_fun %>% 
   itoken(ids = test$id, 
-         # turn off progressbar because it won't look nice in rmd
          progressbar = FALSE)
 
 dtm_test = create_dtm(it_test, vectorizer)
 
-preds = predict(glmnet_classifier, dtm_test, type = 'response')[,1]
-glmnet:::auc(test$sentiment, preds)
+#Predictions on test set -- first row is ID
 
+preds = predict(glmnet_classifier, dtm_test, type = 'response')
+print(preds)
+
+preds2 <- as.data.frame(preds)
+
+test$pred_1 <- preds2$`1.1`
+test$pred_2 <- preds2$`2.1`
+test$pred_3 <- preds2$`3.1`
+test$pred_4 <- preds2$`4.1`
+test$pred_5 <- preds2$`5.1`
 ```
 
 
